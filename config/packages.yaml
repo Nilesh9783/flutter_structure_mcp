@@ -1,0 +1,75 @@
+state:
+  bloc:
+    dependencies:
+      flutter_bloc: ^9.0.0
+      equatable: ^2.0.7
+  getx:
+    dependencies:
+      get: ^5.0.0
+  riverpod:
+    dependencies:
+      flutter_riverpod: ^3.0.0
+  provider:
+    dependencies:
+      provider: ^6.1.2
+  rxdart:
+    dependencies:
+      rxdart: ^0.27.7
+
+network:
+  dio:
+    dependencies:
+      dio: ^5.4.0
+  retrofit:
+    dependencies:
+      dio: ^5.4.0
+      retrofit: ^4.1.0
+      logger: ^2.2.0
+    dev_dependencies:
+      retrofit_generator: ^8.1.0
+      build_runner: ^2.4.8
+
+database:
+  hive:
+    dependencies:
+      hive: ^2.2.3
+      hive_flutter: ^1.1.0
+    dev_dependencies:
+      hive_generator: ^2.0.1
+      build_runner: ^2.4.8
+  isar:
+    dependencies:
+      isar: ^3.1.0+1
+      isar_flutter_libs: ^3.1.0+1
+    dev_dependencies:
+      isar_generator: ^3.1.0+1
+      build_runner: ^2.4.8
+  drift:
+    dependencies:
+      drift: ^2.16.0
+      sqlite3_flutter_libs: ^0.5.20
+    dev_dependencies:
+      drift_dev: ^2.16.0
+      build_runner: ^2.4.8
+
+backend:
+  firebase:
+    dependencies:
+      firebase_core: ^2.27.0
+      firebase_auth: ^4.17.8
+  supabase:
+    dependencies:
+      supabase_flutter: ^2.4.0
+
+router:
+  go_router:
+    dependencies:
+      go_router: ^13.2.0
+  auto_route:
+    dependencies:
+      auto_route: ^7.8.4
+    dev_dependencies:
+      auto_route_generator: ^7.8.4
+      build_runner: ^2.4.8
+  own_extensions:
+    dependencies: {}
