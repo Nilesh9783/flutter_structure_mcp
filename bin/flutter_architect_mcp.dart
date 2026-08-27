@@ -1,5 +1,5 @@
-import 'package:flutter_architect_mcp/models/project_config.dart';
-import 'package:flutter_architect_mcp/generators/project_generator.dart';
+import 'package:flutter_architect_mcp/technologies/flutter/models/project_config.dart';
+import 'package:flutter_architect_mcp/technologies/flutter/generators/project_generator.dart';
 
 
 

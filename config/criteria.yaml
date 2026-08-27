@@ -1,0 +1,36 @@
+# Default configuration criteria for analysis and project creation
+code_quality:
+  max_lines_of_code: 500
+  max_function_lines: 50
+  allow_todo_comments: false
+  enforce_class_prefixes: true
+
+naming_conventions:
+  models:
+    suffix: "Model"
+    require_suffix: true
+  services:
+    suffix: "Service"
+    require_suffix: true
+  screens:
+    suffixes: ["Screen", "Page", "Widget"]
+    require_suffix: true
+  controllers:
+    suffix: "Controller"
+    require_suffix: true
+
+security:
+  allow_hardcoded_secrets: false
+  require_https_urls: true
+  min_sdk_version: 21
+
+architecture:
+  enforced_pattern: "clean"
+  disallow_direct_db_in_ui: true
+  disallow_direct_network_in_ui: true
+
+project_creation:
+  default_state_management: "bloc"
+  default_database: "hive"
+  default_router: "go_router"
+  default_network: "dio"

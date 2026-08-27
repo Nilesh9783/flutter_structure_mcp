@@ -30,7 +30,10 @@ The project contains a complete template library and a generator pipeline organi
 │   │   ├── yaml_service.dart           # YAML parser helper
 │   │   └── pubspec_service.dart        # Dynamic dependency injector into pubspec.yaml
 │   └── tools/
-│       └── create_project.dart         # CLI runner script
+│       ├── architectures_create/
+│       │   └── create_project.dart     # CLI runner script
+│       └── scanners_and_audit_reports/
+│           └── run_audit.dart          # Audit CLI runner script
 └── templates/                      # Core template assets
     ├── architecture/               # Codebases for clean, mvc, and mvvm
     ├── state/                      # State configurations
@@ -108,13 +111,25 @@ Add this to your `claude_desktop_config.json` (usually at `~/Library/Application
   * `router` (String, optional): `go_router`, `auto_route`, or `own_extensions`.
   * `targetDirectory` (String, optional): Absolute path to output directory (defaults to current directory).
 
+#### Example Client Prompts (Natural Language Commands):
+* **Auditing a Codebase (Flutter, Node, Vue, Laravel, Python)**:
+  > "Please run a full audit on the project located at `/path/to/project`. Generate HTML/PDF reports, and email it to team@example.com (optional)."
+* **Auto-Detect Technology & Run Audit**:
+  > "Run a full codebase audit on the folder `/path/to/project`. Automatically detect the project type and output separate reports."
+* **Scaffolding a Flutter App**:
+  > "Scaffold a new Flutter app named `my_app` at `/path/to/output` with MVVM architecture, Riverpod state, Drift database, and GoRouter."
+* **Suggest and Apply Fixes**:
+  > "Generate suggested fixes for `/path/to/project` and apply them safely."
+* **Start Performance Monitor Server**:
+  > "Start the performance monitor dashboard server on port 8080."
+
 ---
 
 ### 2. Via the Command Line Interface (CLI)
 You can invoke the standalone CLI tool directly using the standard arguments:
 
 ```bash
-dart run lib/tools/create_project.dart \
+dart run lib/tools/architectures_create/create_project.dart \
   --name my_awesome_app \
   --arch clean \
   --state bloc \
@@ -148,16 +163,63 @@ This script generates a pre-configured project named `expense_tracker_with_mcp` 
 
 ---
 
-### Example CLI Command (Custom Configuration)
+## Runtime Performance Check Tool
 
-To create a custom project named `mcp_first` (using MVVM, custom extensions for routing, RxDart for state management, and Dio for networking):
+The **Runtime Performance Monitor** spins up a local server hosting a live web-based DevTools-like dashboard to profile active screens, HTTP API timing latencies, heap memory (RAM), and local database storage consumption. Stopping a session compiles all metrics into a formatted printable PDF HTML report.
 
+### 1. Launching the Dashboard Server
+You can launch the dashboard server directly from CLI:
 ```bash
-dart run lib/tools/create_project.dart \
-  --name mcp_first \
-  --arch mvvm \
-  --state rxdart \
-  --network dio \
-  --router own_extensions
+dart run lib/tools/scanners_and_audit_reports/run_runtime_perf.dart --port 8080
 ```
+*   **Port Flag:** Set custom ports using `--port <number>` (defaults to `8080`).
+*   **Access Dashboard:** Open `http://localhost:8080` in your web browser.
+
+### 2. Registering in MCP Server
+You can start the tool via the MCP server using the `start_runtime_perf_check` tool:
+```json
+{
+  "name": "start_runtime_perf_check",
+  "arguments": {
+    "port": 8080
+  }
+}
+```
+
+### 3. Integrating with Your Flutter Application
+Copy the helper code integrations displayed under the **Integration Guide** tab of your dashboard:
+*   **Network Request Interceptor:** Add the custom Dio interceptor to your HTTP client to log request methods, endpoints, response statuses, and durations.
+*   **Screen Route Observer:** Register the `PerfNavigatorObserver` in your MaterialApp observers to track navigation changes.
+*   **Periodic Memory & Storage Streamer:** Launch the background timer inside `main()` to stream RAM (RSS) size and local DB file size points.
+
+All data streams directly to the dashboard, and clicking the **Stop & Save PDF** button on the dashboard will export a detailed engineering review report with remediation steps!
+
+---
+
+### 4. Connecting Simulators, Emulators, & Real Devices
+
+To allow your running mobile app to post metrics back to the local performance server, configure the connection URL according to your target device environment:
+
+#### A. iOS Simulator (macOS host)
+Since the iOS simulator runs directly on the host Mac, it can connect via `localhost`:
+*   **Connection URL:** `http://localhost:8080/api/record`
+
+#### B. Android Emulator (Virtual Device)
+Android emulators run within a virtual loopback environment. To access the host machine's localhost, use the special IP address `10.0.2.2`:
+*   **Connection URL:** `http://10.0.2.2:8080/api/record`
+
+#### C. Physical Android Device (Connected via USB)
+You can forward port `8080` from the device back to your computer using ADB:
+1. Run the following command in your terminal:
+   ```bash
+   adb reverse tcp:8080 tcp:8080
+   ```
+2. Your app can now use `localhost` directly:
+   *   **Connection URL:** `http://localhost:8080/api/record`
+
+#### D. Physical iOS / Android Device (Connected via Wi-Fi)
+1. Ensure both your development computer and mobile device are connected to the **same Wi-Fi network**.
+2. Find your computer's local IP address (e.g. `192.168.1.45` or `10.0.0.12`).
+3. Use that IP address inside your Flutter app:
+   *   **Connection URL:** `http://<your-computer-ip>:8080/api/record`
 

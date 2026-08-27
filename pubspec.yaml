@@ -1,7 +1,7 @@
 name: flutter_architect_mcp
-description: A sample command-line application.
+description: MCP server for Flutter, Laravel, Node, Python and Vue project architecture, security, memory, performance and code analysis.
 version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+repository: https://github.com/Nilesh9783/flutter_structure_mcp
 
 environment:
   sdk: ^3.10.3
@@ -12,7 +12,13 @@ dependencies:
   dart_mcp: ^0.5.2
   yaml: ^3.1.2
   stream_channel: ^2.1.2
+  mailer: ^6.0.1
 
 dev_dependencies:
   lints: ^6.0.0
   test: ^1.25.6
+
+false_secrets:
+  - "test/mcp_analysis_engines_test.dart"
+  - "test/multi_tech_analyzers_test.dart"
+

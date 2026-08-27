@@ -1,0 +1,11 @@
+# SMTP Email Server Configuration
+# Copy this file to config/email_config.yaml and fill in your credentials
+
+smtp:
+  host: smtp.gmail.com
+  port: 465
+  username: your-email@gmail.com
+  password: your-app-password
+  secure: true # Use SSL/TLS
+  from_address: your-email@gmail.com
+  from_name: Flutter Architect MCP

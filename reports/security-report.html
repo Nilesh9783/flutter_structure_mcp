@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flutter Advanced Audit Report - flutter_architect_mcp</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #151d30;
+            --text-color: #e2e8f0;
+            --text-muted: #94a3b8;
+            --primary: #38bdf8;
+            --primary-glow: rgba(56, 189, 248, 0.15);
+            --border: #222e4a;
+            
+            --critical: #ef4444;
+            --high: #f97316;
+            --medium: #eab308;
+            --low: #22c55e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2rem;
+            background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .metadata-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .meta-card {
+            flex: 1;
+            min-width: 220px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .meta-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .meta-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .score-card {
+            flex: 1;
+            min-width: 250px;
+            background: radial-gradient(circle at top left, var(--card-bg) 40%, rgba(56, 189, 248, 0.08) 100%);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .score-circle {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 8px solid var(--primary);
+            box-shadow: 0 0 20px var(--primary-glow);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .stats-card {
+            flex: 2;
+            min-width: 300px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+        }
+
+        .stats-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 1.2rem;
+            border-left: 4px solid var(--primary);
+            padding-left: 0.75rem;
+        }
+
+        .stats-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .stat-box {
+            flex: 1;
+            min-width: 100px;
+            padding: 1rem;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .stat-box.critical { background-color: rgba(239, 68, 68, 0.15); border: 1px solid var(--critical); color: #fca5a5; }
+        .stat-box.high { background-color: rgba(249, 115, 22, 0.15); border: 1px solid var(--high); color: #fed7aa; }
+        .stat-box.medium { background-color: rgba(234, 179, 8, 0.15); border: 1px solid var(--medium); color: #fef08a; }
+        .stat-box.low { background-color: rgba(34, 197, 94, 0.15); border: 1px solid var(--low); color: #bbf7d0; }
+
+        .stat-num { font-size: 2rem; margin-bottom: 0.25rem; }
+        .stat-lbl { font-size: 0.8rem; text-transform: uppercase; }
+
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            background-color: var(--card-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .filter-btn {
+            background-color: #1e293b;
+            color: var(--text-color);
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn.active, .filter-btn:hover {
+            background-color: var(--primary);
+            color: #0b0f19;
+            font-weight: 600;
+        }
+
+        .findings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .finding-item {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .finding-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+        }
+
+        .finding-item.critical::before { background-color: var(--critical); }
+        .finding-item.high::before { background-color: var(--high); }
+        .finding-item.medium::before { background-color: var(--medium); }
+        .finding-item.low::before { background-color: var(--low); }
+
+        .finding-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .finding-title-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .finding-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+
+        .badge {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-weight: 700;
+        }
+
+        .badge.critical { background-color: var(--critical); color: white; }
+        .badge.high { background-color: var(--high); color: white; }
+        .badge.medium { background-color: var(--medium); color: #0b0f19; }
+        .badge.low { background-color: var(--low); color: white; }
+
+        .badge.category { background-color: #334155; color: #cbd5e1; }
+
+        .finding-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .finding-meta span {
+            margin-right: 1rem;
+        }
+
+        .finding-section {
+            background-color: rgba(15, 23, 42, 0.4);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 0.75rem;
+            border: 1px solid rgba(255,255,255,0.02);
+        }
+
+        .section-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        pre {
+            background-color: #020617;
+            padding: 0.75rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #38bdf8;
+            margin-top: 0.25rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            border: 1px dashed var(--border);
+            color: var(--text-muted);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 10000; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(11, 15, 25, 0.85); 
+            backdrop-filter: blur(5px); 
+            align-items: center; 
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: var(--card-bg); 
+            border: 1px solid var(--border); 
+            padding: 2rem; 
+            border-radius: 12px; 
+            max-width: 550px; 
+            width: 90%; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
+            position: relative;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal-close {
+            position: absolute; 
+            right: 1.25rem; 
+            top: 1rem; 
+            font-size: 1.5rem; 
+            color: var(--text-muted); 
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .modal-close:hover {
+            color: var(--primary);
+        }
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        .form-group label {
+            display: block; 
+            font-size: 0.8rem; 
+            color: var(--text-muted); 
+            margin-bottom: 0.35rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .form-control {
+            width: 100%; 
+            padding: 0.75rem; 
+            border-radius: 8px; 
+            border: 1px solid var(--border); 
+            background-color: var(--bg-color); 
+            color: var(--text-color); 
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-control:focus {
+            border-color: var(--primary);
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>Flutter Advanced Engineering Audit</h1>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem;">Automated security, architectural, and lifecycle audit report</p>
+            </div>
+            <div style="text-align: right;">
+                <p style="font-weight: bold;">Date: 2026-08-26 18:22:21</p>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem;">Project Name: flutter_architect_mcp</p>
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center;">
+                    <a href="security-report-pdf.html" style="display: inline-block; background-color: var(--primary); color: #0b0f19; font-weight: 600; text-decoration: none; font-size: 0.8rem; padding: 0.45rem 1rem; border-radius: 6px; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">PDF Download View</a>
+                    <button onclick="openEmailModal()" style="display: inline-block; background-color: #22c55e; color: #0b0f19; font-weight: 600; text-decoration: none; font-size: 0.8rem; padding: 0.45rem 1rem; border-radius: 6px; border: none; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Send via Email</button>
+                </div>
+            </div>
+        </header>
+
+        <section class="metadata-grid">
+            <div class="meta-card">
+                <div class="meta-label">Flutter SDK</div>
+                <div class="meta-value">3.38.4</div>
+            </div>
+            <div class="meta-card">
+                <div class="meta-label">Dart Environment</div>
+                <div class="meta-value">^3.10.3</div>
+            </div>
+            <div class="meta-card">
+                <div class="meta-label">State Management</div>
+                <div class="meta-value">setState</div>
+            </div>
+            <div class="meta-card">
+                <div class="meta-label">Router</div>
+                <div class="meta-value">Navigator (Default)</div>
+            </div>
+            <div class="meta-card">
+                <div class="meta-label">Network & Database</div>
+                <div class="meta-value">HttpClient (Default) / None</div>
+            </div>
+        </section>
+
+                <section class="meta-card" style="margin-bottom: 2rem; max-height: 400px; overflow-y: auto;">
+            <h2 style="font-size: 1.25rem; color: var(--primary); margin-bottom: 0.5rem;">Analysis Criteria Observed</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">This report is based on the following dynamic sheet and local configuration criteria:</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
+    
+<div style="flex: 1; min-width: 280px; background: rgba(255,255,255,0.01); padding: 1rem; border-radius: 8px; border: 1px solid var(--border); box-sizing: border-box;">
+<h3 style="font-size: 0.95rem; color: var(--text-color); border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; margin-bottom: 0.5rem;">Code Quality</h3>
+<ul style="list-style-type: none; font-size: 0.8rem; color: var(--text-muted); padding-left: 0;">
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Proper use of const and final:</strong> If widget not updated once declear and vaeriable value will never change once declear then use const and final with decration <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: const_possible == true
+assignment_count == 1)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Large File LOC:</strong> Trigger when a file has more than 500 non-empty, non-comment code lines <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: file_code_loc > 500)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Large Class LOC:</strong> Trigger when a class exceeds configured LOC threshold <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: class_code_loc > 300)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Large Function LOC:</strong> Trigger when a function/method exceeds configured LOC threshold <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: function_code_loc > 80)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Unused Widgets/Classes/Functions:</strong> Declared widget/class/function has no references <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: reference_count == 0)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Unused Imports:</strong> Imported symbol is never referenced <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: import_reference_count == 0)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Unreachable Branch:</strong> Branch can never execute based on static control-flow analysis <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: unreachable == true)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">High Cyclomatic Complexity:</strong> Function exceeds complexity threshold <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: complexity > 10)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Duplicate Code:</strong> Similar code block exceeds configured similarity threshold <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: similarity >= 0.85)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Large Build Method:</strong> Build method exceeds configured size <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: build_loc > 80)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Deep Widget Nesting:</strong> Widget tree nesting exceeds threshold <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: depth > 8)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Broad State Rebuild:</strong> State update potentially rebuilds unnecessarily large widget subtree <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Configurable)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Missing Const Opportunity:</strong> Constructor/widget can safely be const but is not <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: const_possible == true)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Improper final Usage:</strong> Local variable never reassigned and can be final <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: assignment_count == 1)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Unsafe Late Usage:</strong> late variable may be accessed before initialization or is unnecessary <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Configurable)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Naming Convention Violation:</strong> Classes, variables, methods/files violate Dart naming conventions <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Dart convention)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Empty Catch Block:</strong> Catch block has no meaningful handling/logging/rethrow <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: catch_body_effective_statements == 0)</span></li>
+</ul>
+</div>
+<div style="flex: 1; min-width: 280px; background: rgba(255,255,255,0.01); padding: 1rem; border-radius: 8px; border: 1px solid var(--border); box-sizing: border-box;">
+<h3 style="font-size: 0.95rem; color: var(--text-color); border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; margin-bottom: 0.5rem;">Security</h3>
+<ul style="list-style-type: none; font-size: 0.8rem; color: var(--text-muted); padding-left: 0;">
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Hardcoded API Key:</strong> API key pattern detected in source/config <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Pattern + entropy score)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Payment Gateway Credential:</strong> Payment provider private/secret credential detected <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Provider pattern)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Firebase Service Account:</strong> Firebase service-account JSON/private key detected <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Credential pattern)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Private Key/Certificate:</strong> PEM/private key/signing material detected <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: private_key_detected == true)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Insecure Token Storage:</strong> Access/refresh tokens stored in SharedPreferences/plain files <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Sensitive token + insecure storage)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">HTTP/Cleartext Traffic:</strong> Non-TLS HTTP endpoint or cleartext platform configuration detected <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: http:// / cleartext enabled)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Certificate Validation Bypass:</strong> Client bypasses certificate validation <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Trust-all callback/API)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Unsafe WebView Configuration:</strong> JavaScript/file access/untrusted navigation enabled without controls <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Risk pattern)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Unsafe Dynamic Data Handling:</strong> Unsafe eval-like/dynamic deserialization or execution pattern detected <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Risk API pattern)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Sensitive Data in Logs:</strong> Token/password/payment/PII passed to logging APIs <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Sensitive variable/pattern)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Android Insecure Configuration:</strong> Debuggable release config, exported components or permissive network settings <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Risk configuration)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">iOS Insecure Configuration:</strong> ATS exceptions, insecure entitlements or overly permissive settings <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Risk configuration)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Overly Permissive Firebase Rules:</strong> Firestore/Realtime Database allows broad unauthenticated read/write <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Broad read/write access)</span></li>
+</ul>
+</div>
+<div style="flex: 1; min-width: 280px; background: rgba(255,255,255,0.01); padding: 1rem; border-radius: 8px; border: 1px solid var(--border); box-sizing: border-box;">
+<h3 style="font-size: 0.95rem; color: var(--text-color); border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; margin-bottom: 0.5rem;">Memory Leak</h3>
+<ul style="list-style-type: none; font-size: 0.8rem; color: var(--text-muted); padding-left: 0;">
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Unclosed StreamSubscription:</strong> StreamSubscription created without matching cancellation/disposal <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: cancel_missing == true)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Unclosed Timer:</strong> Timer created without cancellation <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: cancel_missing == true)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">AnimationController Not Disposed:</strong> AnimationController created in State without dispose <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: dispose_missing == true)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">TextEditingController Not Disposed:</strong> TextEditingController retained without disposal <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: dispose_missing == true)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Scroll/Page Controller Not Disposed:</strong> ScrollController/PageController created without disposal <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: dispose_missing == true)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Listener Not Removed:</strong> addListener/addObserver without matching remove <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: remove_missing == true)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Unnecessary StatefulWidget:</strong> StatefulWidget has no mutable state or lifecycle requirement <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: stateful_need == false)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Missing Const StatelessWidget:</strong> Immutable widget does not use const constructor <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: const_possible == true)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Long-Lived Closure Captures State/Context:</strong> Long-lived callback captures State/BuildContext <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Risk pattern)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Unbounded In-Memory Collection:</strong> List/map/cache grows without size/eviction control <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Configurable size/eviction rule)</span></li>
+</ul>
+</div>
+<div style="flex: 1; min-width: 280px; background: rgba(255,255,255,0.01); padding: 1rem; border-radius: 8px; border: 1px solid var(--border); box-sizing: border-box;">
+<h3 style="font-size: 0.95rem; color: var(--text-color); border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; margin-bottom: 0.5rem;">Runtime Analysis</h3>
+<ul style="list-style-type: none; font-size: 0.8rem; color: var(--text-muted); padding-left: 0;">
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Heap Growth Over Time:</strong> Heap increases across repeated flows and does not return toward baseline <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Configurable growth %)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Widget/Object Retention:</strong> Objects remain retained after route/widget disposal <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Retained after disposal)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Frame Rendering/Jank:</strong> Frame build/raster time exceeds threshold or dropped frames detected <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: frame_time > 16.67ms)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Excessive Widget Rebuilds:</strong> Widget rebuild count significantly exceeds expected baseline <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Configurable multiplier)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Slow Startup:</strong> Cold-start time exceeds configured threshold <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: startup_ms > 3000)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Slow API Request:</strong> API request exceeds latency threshold <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: latency_ms > 2000)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Excessive Network Traffic:</strong> Unexpected request frequency or payload volume <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Configurable request/payload threshold)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Unhandled Exception:</strong> Unhandled Dart/Flutter exception during test flow <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: unhandled_exception == true)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Resource Retained After Screen Exit:</strong> Subscription/timer remains active after navigation away <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Active resource after dispose)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Sensitive Runtime Storage:</strong> Token/payment/PII written to logs or insecure storage <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Sensitive data detected)</span></li>
+</ul>
+</div>
+<div style="flex: 1; min-width: 280px; background: rgba(255,255,255,0.01); padding: 1rem; border-radius: 8px; border: 1px solid var(--border); box-sizing: border-box;">
+<h3 style="font-size: 0.95rem; color: var(--text-color); border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; margin-bottom: 0.5rem;">Dependencies</h3>
+<ul style="list-style-type: none; font-size: 0.8rem; color: var(--text-muted); padding-left: 0;">
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Vulnerable Package Version:</strong> Direct/transitive dependency has known security advisory <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Known CVE/advisory)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Unused Dependency:</strong> Declared package has no project references <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: reference_count == 0)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Unmaintained Package:</strong> Package has stale releases or weak maintenance signals <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Configurable inactivity period)</span></li>
+</ul>
+</div>
+<div style="flex: 1; min-width: 280px; background: rgba(255,255,255,0.01); padding: 1rem; border-radius: 8px; border: 1px solid var(--border); box-sizing: border-box;">
+<h3 style="font-size: 0.95rem; color: var(--text-color); border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; margin-bottom: 0.5rem;">Architecture</h3>
+<ul style="list-style-type: none; font-size: 0.8rem; color: var(--text-muted); padding-left: 0;">
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Layer Violation:</strong> UI directly accesses infrastructure/data layer against selected architecture <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Forbidden dependency)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Mixed State Management:</strong> Conflicting state-management patterns used across modules <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Configured allowed patterns)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Business Logic Inside Widget:</strong> Networking/business rules embedded in build/UI classes <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Configurable complexity/API count)</span></li>
+</ul>
+</div>
+<div style="flex: 1; min-width: 280px; background: rgba(255,255,255,0.01); padding: 1rem; border-radius: 8px; border: 1px solid var(--border); box-sizing: border-box;">
+<h3 style="font-size: 0.95rem; color: var(--text-color); border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; margin-bottom: 0.5rem;">Reporting</h3>
+<ul style="list-style-type: none; font-size: 0.8rem; color: var(--text-muted); padding-left: 0;">
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">File/Line/Code Evidence:</strong> Every finding must include exact source location and evidence snippet <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Required fields)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Severity/Confidence Scoring:</strong> Every finding receives severity and confidence <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Required fields)</span></li>
+<li style="margin-bottom: 0.5rem;"><strong style="color: var(--text-color); font-weight: 600;">Suppression/Ignore Support:</strong> Approved findings can be suppressed with a reason <span style="color: var(--primary); font-size: 0.7rem; font-weight: 500;">(Threshold: Suppression requires reason)</span></li>
+</ul>
+</div>
+<div style="background: rgba(255,255,255,0.01); padding: 1rem; border-radius: 8px; border: 1px solid var(--border);">
+<h3 style="font-size: 0.95rem; color: var(--text-color); border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; margin-bottom: 0.5rem;">Local Threshold Parameters</h3>
+<ul style="list-style-type: none; font-size: 0.8rem; color: var(--text-muted); padding-left: 0;">
+<li style="margin-bottom: 0.25rem;"><strong style="color: var(--text-color); font-weight: 600;">Max Lines of Code:</strong> 500</li>
+<li style="margin-bottom: 0.25rem;"><strong style="color: var(--text-color); font-weight: 600;">Max Function Lines:</strong> 50</li>
+<li style="margin-bottom: 0.25rem;"><strong style="color: var(--text-color); font-weight: 600;">Allow TODO:</strong> false</li>
+<li style="margin-bottom: 0.25rem;"><strong style="color: var(--text-color); font-weight: 600;">Enforce class prefixes:</strong> true</li>
+</ul>
+</div>
+</div></section>
+
+
+        <div style="margin-bottom: 2rem; background: rgba(56, 189, 248, 0.05); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+            <span>📋 <strong style="color: var(--primary); cursor: pointer;" onclick="openEmailModal()">All review criteria added in sheet, please check and review report</strong></span>
+            <button onclick="openEmailModal()" style="background: none; border: none; color: var(--primary); font-weight: bold; cursor: pointer; text-decoration: underline;">Review & Send</button>
+        </div>
+
+        <section class="dashboard">
+            <div class="score-card">
+                <div class="score-circle">69</div>
+                <h3 style="font-size: 1.25rem; margin-bottom: 0.25rem;">Overall Audit Score</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem;">Capped 0 - 100 scale</p>
+            </div>
+            <div class="stats-card">
+                <h3 class="stats-title">Audit Findings Summary</h3>
+                <div class="stats-grid">
+                    <div class="stat-box critical">
+                        <div class="stat-num">0</div>
+                        <div class="stat-lbl">Critical</div>
+                    </div>
+                    <div class="stat-box high">
+                        <div class="stat-num">1</div>
+                        <div class="stat-lbl">High</div>
+                    </div>
+                    <div class="stat-box medium">
+                        <div class="stat-num">2</div>
+                        <div class="stat-lbl">Medium</div>
+                    </div>
+                    <div class="stat-box low">
+                        <div class="stat-num">1</div>
+                        <div class="stat-lbl">Low</div>
+                    </div>
+                </div>
+                <div style="margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+                    <strong>Scoring Rationale:</strong><br>
+                    Calculated from security/dependency findings:<br>- Initial Base Score: 100<br>- Critical Findings: 0 (Penalty: -25 points each => 0)<br>- High Findings: 1 (Penalty: -15 points each => -15)<br>- Medium Findings: 2 (Penalty: -7 points each => -14)<br>- Low Findings: 1 (Penalty: -2 points each => -2)<br>- Total Deductions: 31<br>- Final Score: 69
+                </div>
+            </div>
+        </section>
+
+        <section style="margin-bottom: 2rem;">
+            <h3 style="font-size: 1.25rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span>Detailed Findings</span>
+            </h3>
+            
+            <div class="filters">
+                <button class="filter-btn active" onclick="filterSeverity('ALL')">All Severity</button>
+                <button class="filter-btn" onclick="filterSeverity('CRITICAL')">Critical</button>
+                <button class="filter-btn" onclick="filterSeverity('HIGH')">High</button>
+                <button class="filter-btn" onclick="filterSeverity('MEDIUM')">Medium</button>
+                <button class="filter-btn" onclick="filterSeverity('LOW')">Low</button>
+                
+                <span style="border-left: 1px solid var(--border); margin: 0 0.5rem;"></span>
+                
+                <button class="filter-btn active" onclick="filterCategory('ALL')">All Categories</button>
+                <button class="filter-btn" onclick="filterCategory('SECURITY')">Security</button>
+                <button class="filter-btn" onclick="filterCategory('MEMORY')">Memory</button>
+                <button class="filter-btn" onclick="filterCategory('PERFORMANCE')">Performance</button>
+                <button class="filter-btn" onclick="filterCategory('CODE_QUALITY')">Code Quality</button>
+                <button class="filter-btn" onclick="filterCategory('DEPENDENCY')">Dependencies</button>
+            </div>
+
+            <div class="findings-list" id="findingsContainer">
+                <!-- Injected via JavaScript -->
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const findings = [{"id":"SEC-ATH-002","category":"SECURITY","severity":"MEDIUM","confidence":"LOW","title":"Incomplete Logout Implementation","file":"lib/security/scanners/auth_scanner.dart","line":1,"evidence":"void logout() { ... }","description":"The logout function in lib/security/scanners/auth_scanner.dart does not appear to clear local authentication tokens or cache.","risk":"If local storage is not wiped during logout, another user or an attacker could potentially access the preceding session.","recommendation":"Ensure SharedPreferences, Hive boxes, and local caches are cleared or deleted when the user logs out.","fixAvailable":false},{"id":"SEC-ATH-001","category":"SECURITY","severity":"HIGH","confidence":"MEDIUM","title":"Potential Hardcoded Password or Auth Key","file":"templates/shared/utils/helper/shared_pref_helper.dart","line":13,"evidence":"final String deviceToken = 'deviceToken';","description":"Found variable assignment indicating a hardcoded password or token: \"String deviceToken = 'deviceToken'\"","risk":"Hardcoding passwords in code makes them accessible to any attacker who extracts the application binary.","recommendation":"Retrieve passwords dynamically from user input or encrypted vaults.","fixAvailable":false},{"id":"SEC-WV-001","category":"SECURITY","severity":"MEDIUM","confidence":"HIGH","title":"WebView JavaScript Execution Enabled Unrestrictedly","file":"templates/shared/common/reusable_component/widgets/web_view.dart","line":1,"evidence":"JavaScriptMode.unrestricted","description":"Detected a WebView instantiated with unrestricted JavaScript execution enabled.","risk":"Enabling JavaScript in WebViews allows loaded pages to execute code. If untrusted remote content is displayed, it could lead to Cross-Site Scripting (XSS) attacks compromising local app data or bridge APIs.","recommendation":"Only enable JavaScript if strictly required. Ensure that navigation is restricted to HTTPS and approved domains using navigation delegates.","fixAvailable":false},{"id":"SEC-DEP-INFO","category":"DEPENDENCY","severity":"LOW","confidence":"HIGH","title":"Vulnerability Database Check Status","file":"pubspec.yaml","line":1,"evidence":"Local Vulnerability Database Active","description":"Using built-in offline Dart/Flutter security rules database. Remote live vulnerability database check is not configured.","risk":"None. This is an informational message stating that live CVE lookup from OSV/GitHub Advisory is not active.","recommendation":"Periodically check dependencies using GitHub security alerts or running \"dart pub token\" or external tools.","fixAvailable":false},{"id":"MEM-001","category":"MEMORY","severity":"MEDIUM","confidence":"MEDIUM","title":"Potential StreamSubscription Memory Leak","file":"scratch/test_draft.dart","line":8,"evidence":"StreamSubscription without .cancel()","description":"A stream listener was established in scratch/test_draft.dart, but no corresponding \".cancel()\" call was detected in the file.","risk":"Active stream subscriptions retain references to listeners and context, which can keep widgets/controllers in memory forever if not canceled when no longer needed.","recommendation":"Store the StreamSubscription in a variable and call subscription.cancel() in dispose() or onClose().","fixAvailable":false},{"id":"MEM-001","category":"MEMORY","severity":"MEDIUM","confidence":"MEDIUM","title":"Potential StreamSubscription Memory Leak","file":"lib/tools/scanners_and_audit_reports/run_runtime_perf.dart","line":30,"evidence":"StreamSubscription without .cancel()","description":"A stream listener was established in lib/tools/scanners_and_audit_reports/run_runtime_perf.dart, but no corresponding \".cancel()\" call was detected in the file.","risk":"Active stream subscriptions retain references to listeners and context, which can keep widgets/controllers in memory forever if not canceled when no longer needed.","recommendation":"Store the StreamSubscription in a variable and call subscription.cancel() in dispose() or onClose().","fixAvailable":false},{"id":"MEM-002","category":"MEMORY","severity":"MEDIUM","confidence":"MEDIUM","title":"Potential Timer Memory Leak","file":"lib/tools/runtime_perf_check/perf_dashboard_html.dart","line":364,"evidence":"Timer instantiated without .cancel()","description":"A Timer (or Timer.periodic) is created in lib/tools/runtime_perf_check/perf_dashboard_html.dart, but no \".cancel()\" call was found.","risk":"Periodic timers keep running in the background and prevent garbage collection of their callback contexts, leading to memory and CPU leaks.","recommendation":"Keep a reference to the Timer and cancel it inside the dispose() or onClose() methods.","fixAvailable":false},{"id":"MEM-001","category":"MEMORY","severity":"MEDIUM","confidence":"MEDIUM","title":"Potential StreamSubscription Memory Leak","file":"lib/tools/runtime_perf_check/perf_server.dart","line":47,"evidence":"StreamSubscription without .cancel()","description":"A stream listener was established in lib/tools/runtime_perf_check/perf_server.dart, but no corresponding \".cancel()\" call was detected in the file.","risk":"Active stream subscriptions retain references to listeners and context, which can keep widgets/controllers in memory forever if not canceled when no longer needed.","recommendation":"Store the StreamSubscription in a variable and call subscription.cancel() in dispose() or onClose().","fixAvailable":false},{"id":"MEM-002","category":"MEMORY","severity":"MEDIUM","confidence":"MEDIUM","title":"Potential Timer Memory Leak","file":"lib/tools/runtime_perf_check/client_integration.dart","line":122,"evidence":"Timer instantiated without .cancel()","description":"A Timer (or Timer.periodic) is created in lib/tools/runtime_perf_check/client_integration.dart, but no \".cancel()\" call was found.","risk":"Periodic timers keep running in the background and prevent garbage collection of their callback contexts, leading to memory and CPU leaks.","recommendation":"Keep a reference to the Timer and cancel it inside the dispose() or onClose() methods.","fixAvailable":false},{"id":"MEM-001","category":"MEMORY","severity":"MEDIUM","confidence":"MEDIUM","title":"Potential StreamSubscription Memory Leak","file":"templates/shared/utils/helper/deep_link_helper.dart","line":78,"evidence":"StreamSubscription without .cancel()","description":"A stream listener was established in templates/shared/utils/helper/deep_link_helper.dart, but no corresponding \".cancel()\" call was detected in the file.","risk":"Active stream subscriptions retain references to listeners and context, which can keep widgets/controllers in memory forever if not canceled when no longer needed.","recommendation":"Store the StreamSubscription in a variable and call subscription.cancel() in dispose() or onClose().","fixAvailable":false},{"id":"MEM-001","category":"MEMORY","severity":"MEDIUM","confidence":"MEDIUM","title":"Potential StreamSubscription Memory Leak","file":"templates/shared/utils/helper/notification_sender_helper.dart","line":145,"evidence":"StreamSubscription without .cancel()","description":"A stream listener was established in templates/shared/utils/helper/notification_sender_helper.dart, but no corresponding \".cancel()\" call was detected in the file.","risk":"Active stream subscriptions retain references to listeners and context, which can keep widgets/controllers in memory forever if not canceled when no longer needed.","recommendation":"Store the StreamSubscription in a variable and call subscription.cancel() in dispose() or onClose().","fixAvailable":false},{"id":"MEM-001","category":"MEMORY","severity":"MEDIUM","confidence":"MEDIUM","title":"Potential StreamSubscription Memory Leak","file":"templates/shared/utils/helper/connectivity.dart","line":25,"evidence":"StreamSubscription without .cancel()","description":"A stream listener was established in templates/shared/utils/helper/connectivity.dart, but no corresponding \".cancel()\" call was detected in the file.","risk":"Active stream subscriptions retain references to listeners and context, which can keep widgets/controllers in memory forever if not canceled when no longer needed.","recommendation":"Store the StreamSubscription in a variable and call subscription.cancel() in dispose() or onClose().","fixAvailable":false},{"id":"MEM-003","category":"MEMORY","severity":"HIGH","confidence":"MEDIUM","title":"Potential Memory Leak: Un-disposed TextEditingController","file":"templates/shared/common/reusable_component/dialogs/dispute_dialog.dart","line":15,"evidence":"TextEditingController created without .dispose()","description":"A TextEditingController was created in templates/shared/common/reusable_component/dialogs/dispute_dialog.dart but there is no call to dispose() in the class.","risk":"Failing to dispose controllers leaves native observers and resources registered, causing severe memory leaks in the app.","recommendation":"Override the dispose() method in State or GetxController/BLoC and call controller.dispose().","fixAvailable":false},{"id":"MEM-003","category":"MEMORY","severity":"HIGH","confidence":"MEDIUM","title":"Potential Memory Leak: Un-disposed ScrollController","file":"templates/shared/common/reusable_component/widgets/trasaction_lists/common_transaction_list.dart","line":39,"evidence":"ScrollController created without .dispose()","description":"A ScrollController was created in templates/shared/common/reusable_component/widgets/trasaction_lists/common_transaction_list.dart but there is no call to dispose() in the class.","risk":"Failing to dispose controllers leaves native observers and resources registered, causing severe memory leaks in the app.","recommendation":"Override the dispose() method in State or GetxController/BLoC and call controller.dispose().","fixAvailable":false},{"id":"PERF-003","category":"PERFORMANCE","severity":"MEDIUM","confidence":"HIGH","title":"Use of Static ListView Instead of Lazy ListView.builder","file":"lib/performance/performance_engine.dart","line":100,"evidence":"description: 'Using \"ListView(children: ...)\" instead of \"ListView.builder(...)\".',","description":"Using \"ListView(children: ...)\" instead of \"ListView.builder(...)\".","risk":"A standard ListView instantiates all children items at once, regardless of whether they are visible on screen, causing memory pressure and rendering delays for long lists.","recommendation":"Refactor to \"ListView.builder(...)\" to enable lazy-loading and item recycling for better scrolling performance.","fixAvailable":false},{"id":"PERF-001","category":"PERFORMANCE","severity":"HIGH","confidence":"MEDIUM","title":"Controller Instantiation Inside Widget build() Method","file":"templates/shared/common/reusable_component/widgets/app_text_form_field.dart","line":38,"evidence":"Controller instantiated inside build(...) method","description":"A controller is created inside the build() method of a widget in templates/shared/common/reusable_component/widgets/app_text_form_field.dart.","risk":"Controllers will be re-instantiated on every single widget build/rebuild, resetting their states and causing CPU spikes/memory leaks.","recommendation":"Convert the widget to a StatefulWidget and instantiate controllers in initState() and dispose them in dispose().","fixAvailable":false},{"id":"PERF-001","category":"PERFORMANCE","severity":"HIGH","confidence":"MEDIUM","title":"Controller Instantiation Inside Widget build() Method","file":"templates/shared/common/reusable_component/widgets/custom_dropdown/dropdown_overlay/dropdown_overlay.dart","line":109,"evidence":"Controller instantiated inside build(...) method","description":"A controller is created inside the build() method of a widget in templates/shared/common/reusable_component/widgets/custom_dropdown/dropdown_overlay/dropdown_overlay.dart.","risk":"Controllers will be re-instantiated on every single widget build/rebuild, resetting their states and causing CPU spikes/memory leaks.","recommendation":"Convert the widget to a StatefulWidget and instantiate controllers in initState() and dispose them in dispose().","fixAvailable":false},{"id":"PERF-001","category":"PERFORMANCE","severity":"HIGH","confidence":"MEDIUM","title":"Controller Instantiation Inside Widget build() Method","file":"templates/shared/common/reusable_component/widgets/custom_dropdown/dropdown_overlay/widgets/items_list.dart","line":25,"evidence":"Controller instantiated inside build(...) method","description":"A controller is created inside the build() method of a widget in templates/shared/common/reusable_component/widgets/custom_dropdown/dropdown_overlay/widgets/items_list.dart.","risk":"Controllers will be re-instantiated on every single widget build/rebuild, resetting their states and causing CPU spikes/memory leaks.","recommendation":"Convert the widget to a StatefulWidget and instantiate controllers in initState() and dispose them in dispose().","fixAvailable":false},{"id":"PERF-001","category":"PERFORMANCE","severity":"HIGH","confidence":"MEDIUM","title":"Controller Instantiation Inside Widget build() Method","file":"templates/shared/common/reusable_component/widgets/trasaction_lists/common_transaction_list.dart","line":69,"evidence":"Controller instantiated inside build(...) method","description":"A controller is created inside the build() method of a widget in templates/shared/common/reusable_component/widgets/trasaction_lists/common_transaction_list.dart.","risk":"Controllers will be re-instantiated on every single widget build/rebuild, resetting their states and causing CPU spikes/memory leaks.","recommendation":"Convert the widget to a StatefulWidget and instantiate controllers in initState() and dispose them in dispose().","fixAvailable":false},{"id":"QAL-001","category":"CODE_QUALITY","severity":"LOW","confidence":"HIGH","title":"Excessively Long File (Class Size)","file":"bin/server.dart","line":1,"evidence":"Lines count: 1238","description":"The file bin/server.dart is longer than 500 lines.","risk":"Large files indicate bloated classes that violate the Single Responsibility Principle, making maintaining, testing, and understanding the code difficult.","recommendation":"Break down the class or widgets into smaller, modular helper components or service classes.","fixAvailable":false},{"id":"QAL-001","category":"CODE_QUALITY","severity":"LOW","confidence":"HIGH","title":"Excessively Long File (Class Size)","file":"lib/tools/runtime_perf_check/perf_pdf_generator.dart","line":1,"evidence":"Lines count: 587","description":"The file lib/tools/runtime_perf_check/perf_pdf_generator.dart is longer than 500 lines.","risk":"Large files indicate bloated classes that violate the Single Responsibility Principle, making maintaining, testing, and understanding the code difficult.","recommendation":"Break down the class or widgets into smaller, modular helper components or service classes.","fixAvailable":false},{"id":"QAL-001","category":"CODE_QUALITY","severity":"LOW","confidence":"HIGH","title":"Excessively Long File (Class Size)","file":"lib/tools/runtime_perf_check/perf_dashboard_html.dart","line":1,"evidence":"Lines count: 815","description":"The file lib/tools/runtime_perf_check/perf_dashboard_html.dart is longer than 500 lines.","risk":"Large files indicate bloated classes that violate the Single Responsibility Principle, making maintaining, testing, and understanding the code difficult.","recommendation":"Break down the class or widgets into smaller, modular helper components or service classes.","fixAvailable":false},{"id":"QAL-001","category":"CODE_QUALITY","severity":"LOW","confidence":"HIGH","title":"Excessively Long File (Class Size)","file":"templates/shared/common/reusable_component/toast/flushbar.dart","line":1,"evidence":"Lines count: 791","description":"The file templates/shared/common/reusable_component/toast/flushbar.dart is longer than 500 lines.","risk":"Large files indicate bloated classes that violate the Single Responsibility Principle, making maintaining, testing, and understanding the code difficult.","recommendation":"Break down the class or widgets into smaller, modular helper components or service classes.","fixAvailable":false},{"id":"QAL-001","category":"CODE_QUALITY","severity":"LOW","confidence":"HIGH","title":"Excessively Long File (Class Size)","file":"templates/shared/common/reusable_component/widgets/common_debit_card.dart","line":1,"evidence":"Lines count: 532","description":"The file templates/shared/common/reusable_component/widgets/common_debit_card.dart is longer than 500 lines.","risk":"Large files indicate bloated classes that violate the Single Responsibility Principle, making maintaining, testing, and understanding the code difficult.","recommendation":"Break down the class or widgets into smaller, modular helper components or service classes.","fixAvailable":false},{"id":"QAL-002","category":"CODE_QUALITY","severity":"LOW","confidence":"HIGH","title":"Pending TODO / FIXME Comment","file":"templates/shared/common/reusable_component/widgets/keyboard_config.dart","line":3,"evidence":"// TODO in future remove","description":"Found a developer note: \"in future remove\"","risk":"Unresolved TODOs represent technical debt, legacy code shortcuts, or features left incomplete before push to production.","recommendation":"Address the TODO item or track it in your team's issue management system.","fixAvailable":false},{"id":"QAL-002","category":"CODE_QUALITY","severity":"LOW","confidence":"HIGH","title":"Pending TODO / FIXME Comment","file":"templates/shared/common/reusable_component/widgets/web_view.dart","line":23,"evidence":"// TODO: implement initState","description":"Found a developer note: \"implement initState\"","risk":"Unresolved TODOs represent technical debt, legacy code shortcuts, or features left incomplete before push to production.","recommendation":"Address the TODO item or track it in your team's issue management system.","fixAvailable":false},{"id":"QAL-002","category":"CODE_QUALITY","severity":"LOW","confidence":"HIGH","title":"Pending TODO / FIXME Comment","file":"templates/shared/common/reusable_component/widgets/trasaction_lists/common_trsaction_list_bloc.dart","line":8,"evidence":"// TODO: implement dispose","description":"Found a developer note: \"implement dispose\"","risk":"Unresolved TODOs represent technical debt, legacy code shortcuts, or features left incomplete before push to production.","recommendation":"Address the TODO item or track it in your team's issue management system.","fixAvailable":false},{"id":"QAL-001","category":"CODE_QUALITY","severity":"LOW","confidence":"HIGH","title":"Excessively Long File (Class Size)","file":"templates/shared/common/reusable_component/widgets/trasaction_lists/common_transaction_list.dart","line":1,"evidence":"Lines count: 766","description":"The file templates/shared/common/reusable_component/widgets/trasaction_lists/common_transaction_list.dart is longer than 500 lines.","risk":"Large files indicate bloated classes that violate the Single Responsibility Principle, making maintaining, testing, and understanding the code difficult.","recommendation":"Break down the class or widgets into smaller, modular helper components or service classes.","fixAvailable":false},{"id":"QAL-002","category":"CODE_QUALITY","severity":"LOW","confidence":"HIGH","title":"Pending TODO / FIXME Comment","file":"templates/shared/common/reusable_component/widgets/trasaction_lists/common_transaction_list.dart","line":64,"evidence":"// TODO: implement initState","description":"Found a developer note: \"implement initState\"","risk":"Unresolved TODOs represent technical debt, legacy code shortcuts, or features left incomplete before push to production.","recommendation":"Address the TODO item or track it in your team's issue management system.","fixAvailable":false},{"id":"QAL-002","category":"CODE_QUALITY","severity":"LOW","confidence":"HIGH","title":"Pending TODO / FIXME Comment","file":"templates/shared/common/reusable_component/widgets/trasaction_lists/common_transaction_list.dart","line":523,"evidence":"// TODO remove +/- symbol removed","description":"Found a developer note: \"remove +/- symbol removed\"","risk":"Unresolved TODOs represent technical debt, legacy code shortcuts, or features left incomplete before push to production.","recommendation":"Address the TODO item or track it in your team's issue management system.","fixAvailable":false},{"id":"QAL-002","category":"CODE_QUALITY","severity":"LOW","confidence":"HIGH","title":"Pending TODO / FIXME Comment","file":"templates/shared/common/reusable_component/widgets/trasaction_lists/common_transaction_list.dart","line":570,"evidence":"//TODO: Sprint 2","description":"Found a developer note: \"Sprint 2\"","risk":"Unresolved TODOs represent technical debt, legacy code shortcuts, or features left incomplete before push to production.","recommendation":"Address the TODO item or track it in your team's issue management system.","fixAvailable":false}];
+        let currentSeverity = 'ALL';
+        let currentCategory = 'ALL';
+
+        function renderFindings() {
+            const container = document.getElementById('findingsContainer');
+            container.innerHTML = '';
+
+            const filtered = findings.filter(f => {
+                const matchSev = currentSeverity === 'ALL' || f.severity.toUpperCase() === currentSeverity;
+                const matchCat = currentCategory === 'ALL' || f.category.toUpperCase() === currentCategory;
+                return matchSev && matchCat;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h4>No findings match the current filter selection.</h4>
+                        <p style="margin-top: 0.5rem; font-size: 0.9rem;">Great job! No unresolved issues found in this view.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(f => {
+                const item = document.createElement('div');
+                item.className = 'finding-item ' + f.severity.toLowerCase();
+
+                item.innerHTML = `
+                    <div class="finding-header">
+                        <div class="finding-title-group">
+                            <span class="badge ` + f.severity.toLowerCase() + `">` + f.severity + `</span>
+                            <span class="badge category">` + f.category + `</span>
+                            <h4 class="finding-title">` + f.title + `</h4>
+                        </div>
+                        <span style="font-size: 0.85rem; font-weight: bold; color: var(--text-muted)">ID: ` + f.id + `</span>
+                    </div>
+
+                    <div class="finding-meta">
+                        <span><strong>File:</strong> ` + f.file + `:` + f.line + `</span>
+                        <span><strong>Confidence:</strong> ` + f.confidence + `</span>
+                        ` + (f.fixAvailable ? '<span style="color: var(--low); font-weight: bold;">(Auto-Fix Available)</span>' : '') + `
+                    </div>
+
+                    <div class="finding-section">
+                        <div class="section-title">Evidence</div>
+                        <pre><code>` + escapeHtml(f.evidence) + `</code></pre>
+                    </div>
+
+                    <div class="finding-section">
+                        <div class="section-title">Description</div>
+                        <p style="font-size: 0.95rem; margin-top: 0.25rem;">` + f.description.replace(/\n/g, '<br>') + `</p>
+                    </div>
+
+                    <div class="finding-section">
+                        <div class="section-title">Risk Analysis</div>
+                        <p style="font-size: 0.95rem; margin-top: 0.25rem;">` + f.risk + `</p>
+                    </div>
+
+                    <div class="finding-section">
+                        <div class="section-title">Recommendation</div>
+                        <p style="font-size: 0.95rem; margin-top: 0.25rem; white-space: pre-line;">` + f.recommendation + `</p>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function filterSeverity(sev) {
+            currentSeverity = sev;
+            updateButtonState('filter-btn', sev, [ 'ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW' ]);
+            renderFindings();
+        }
+
+        function filterCategory(cat) {
+            currentCategory = cat;
+            updateButtonState('filter-btn', cat, [ 'ALL', 'SECURITY', 'MEMORY', 'PERFORMANCE', 'CODE_QUALITY', 'DEPENDENCY' ]);
+            renderFindings();
+        }
+
+        function updateButtonState(btnClass, activeVal, valuesList) {
+            const buttons = document.querySelectorAll('.' + btnClass);
+            buttons.forEach(btn => {
+                const text = btn.innerText.toUpperCase();
+                // Match text with filter names
+                const matches = text.includes(activeVal) || (activeVal === 'ALL' && text.includes('ALL'));
+                if (matches) {
+                    btn.classList.add('active');
+                } else {
+                    // Check if it is the other values in valuesList
+                    const isOther = valuesList.some(v => v !== activeVal && text.includes(v));
+                    if (isOther) {
+                        btn.classList.remove('active');
+                    }
+                }
+            });
+        }
+
+        // Email Sending JavaScript Functions
+        function openEmailModal() {
+            document.getElementById('emailModal').style.display = 'flex';
+            document.getElementById('emailFeedback').style.display = 'none';
+        }
+
+        function closeEmailModal() {
+            document.getElementById('emailModal').style.display = 'none';
+        }
+
+        async function sendEmailReport() {
+            const to = document.getElementById('emailTo').value.trim();
+            const subject = document.getElementById('emailSubject').value.trim();
+            const body = document.getElementById('emailBody').value.trim();
+            const feedback = document.getElementById('emailFeedback');
+            const btn = document.getElementById('btnSendEmail');
+            
+            if (!to) {
+                feedback.style.display = 'block';
+                feedback.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+                feedback.style.border = '1px solid #ef4444';
+                feedback.style.color = '#ef4444';
+                feedback.innerText = 'Please enter a valid recipient email address.';
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerText = 'Compiling PDF...';
+            feedback.style.display = 'block';
+            feedback.style.backgroundColor = 'rgba(56, 189, 248, 0.15)';
+            feedback.style.border = '1px solid #38bdf8';
+            feedback.style.color = '#38bdf8';
+            feedback.innerText = 'Generating PDF report in browser...';
+            
+            try {
+                // Compile PDF using html2pdf
+                const element = document.querySelector('.container');
+                
+                // Exclude elements from PDF (modals, action buttons)
+                const opt = {
+                    margin: 10,
+                    filename: 'security-report.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 1.5, useCORS: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+                
+                // Hide modal temporarily for PDF capture
+                document.getElementById('emailModal').style.display = 'none';
+                
+                html2pdf().from(element).set(opt).output('datauristring').then(async function(pdfDataUri) {
+                    // Show modal again
+                    document.getElementById('emailModal').style.display = 'flex';
+                    
+                    btn.innerText = 'Sending email...';
+                    feedback.innerText = 'Sending email payload to server...';
+                    
+                    const pdfBase64 = pdfDataUri.split(',')[1];
+                    const payload = {
+                        to: to,
+                        subject: subject,
+                        body: body,
+                        pdfBase64: pdfBase64,
+                        filename: 'security-report.pdf'
+                    };
+                    
+                    // Auto-port discovery for Shelf server
+                    const ports = [8080, 8089, 8081, 9000];
+                    let success = false;
+                    let resMsg = '';
+                    
+                    for (const port of ports) {
+                        try {
+                            const response = await fetch(`http://localhost:${port}/api/send-email`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload)
+                            });
+                            if (response.ok) {
+                                const resData = await response.json();
+                                success = true;
+                                resMsg = resData.message || 'Email successfully sent.';
+                                break;
+                            }
+                        } catch (_) {
+                            // Suppress and try next port
+                        }
+                    }
+                    
+                    btn.disabled = false;
+                    btn.innerText = 'Send Report';
+                    
+                    if (success) {
+                        feedback.style.backgroundColor = 'rgba(34, 197, 94, 0.15)';
+                        feedback.style.border = '1px solid #22c55e';
+                        feedback.style.color = '#22c55e';
+                        feedback.innerText = resMsg;
+                        setTimeout(closeEmailModal, 3000);
+                    } else {
+                        feedback.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+                        feedback.style.border = '1px solid #ef4444';
+                        feedback.style.color = '#ef4444';
+                        feedback.innerText = 'Failed to connect to local MCP Performance server. Please ensure the server is running.';
+                    }
+                }).catch(function(err) {
+                    document.getElementById('emailModal').style.display = 'flex';
+                    btn.disabled = false;
+                    btn.innerText = 'Send Report';
+                    feedback.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+                    feedback.style.border = '1px solid #ef4444';
+                    feedback.style.color = '#ef4444';
+                    feedback.innerText = 'Error compiling PDF: ' + err.toString();
+                });
+            } catch (e) {
+                document.getElementById('emailModal').style.display = 'flex';
+                btn.disabled = false;
+                btn.innerText = 'Send Report';
+                feedback.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+                feedback.style.border = '1px solid #ef4444';
+                feedback.style.color = '#ef4444';
+                feedback.innerText = 'Error: ' + e.toString();
+            }
+        }
+
+        // Initial load
+        renderFindings();
+    </script>
+
+    <!-- Email Modal HTML -->
+    <div id="emailModal" class="modal">
+        <div class="modal-content">
+            <span onclick="closeEmailModal()" class="modal-close">&times;</span>
+            <h2 style="font-size: 1.25rem; color: var(--text-color); margin-bottom: 1.25rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Send Audit Report</h2>
+            
+            <div class="form-group">
+                <label>To (Recipient Email)</label>
+                <input type="email" id="emailTo" class="form-control" placeholder="developer/client email address..." required>
+            </div>
+            
+            <div class="form-group">
+                <label>Subject</label>
+                <input type="text" id="emailSubject" class="form-control" value="Audit Report: flutter_architect_mcp" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Message Summary</label>
+                <textarea id="emailBody" class="form-control" rows="8" style="font-family: sans-serif; resize: vertical;">Hello,
+
+Please find attached the security and code quality audit report for the project "flutter_architect_mcp".
+
+Audit Summary:
+- Security Score: 69/100
+- Total Findings: 31
+- Detected Architecture: Unknown
+- Detected State Management: setState
+
+All review criteria are added in the sheet. Please check and review the attached PDF report.
+
+Best regards,
+Flutter Architect MCP Analyzer</textarea>
+            </div>
+            
+            <div id="emailFeedback" style="padding: 0.75rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1.25rem; display: none;"></div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button onclick="closeEmailModal()" style="padding: 0.55rem 1.25rem; border-radius: 8px; border: 1px solid var(--border); background-color: transparent; color: var(--text-color); font-size: 0.85rem; cursor: pointer; font-weight: 600;">Cancel</button>
+                <button onclick="sendEmailReport()" id="btnSendEmail" style="padding: 0.55rem 1.5rem; border-radius: 8px; border: none; background-color: var(--primary); color: #0b0f19; font-weight: bold; font-size: 0.85rem; cursor: pointer; box-shadow: 0 4px 10px rgba(56, 189, 248, 0.2);">Send Report</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
