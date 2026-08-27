@@ -92,7 +92,7 @@ Add this to your `claude_desktop_config.json` (usually at `~/Library/Application
       "command": "dart",
       "args": [
         "run",
-        "/Users/indianic/Desktop/Indianic_project/my_mcp/flutter_architect_mcp/bin/server.dart"
+        "/path/to/your/project/my_mcp/flutter_architect_mcp/bin/server.dart"
       ]
     }
   }
