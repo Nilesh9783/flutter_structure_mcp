@@ -1,0 +1,19 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.Nilesh9783/flutter_structure_mcp",
+  "description": "MCP server for auditing codebase architecture, security, memory, performance, and code quality in Flutter, Laravel, Node, Python, and Vue projects.",
+  "repository": {
+    "url": "https://github.com/Nilesh9783/flutter_structure_mcp",
+    "source": "github"
+  },
+  "version": "1.0.0",
+  "packages": [
+    {
+      "registryType": "oci",
+      "identifier": "docker.io/nilesh9783/flutter_structure_mcp:1.0.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
