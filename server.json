@@ -6,11 +6,11 @@
     "url": "https://github.com/Nilesh9783/flutter_structure_mcp",
     "source": "github"
   },
-  "version": "1.0.0",
+  "version": "1.0.2",
   "packages": [
     {
       "registryType": "oci",
-      "identifier": "docker.io/nilesh9783/flutter_structure_mcp:1.0.0",
+      "identifier": "docker.io/nilesh9783/flutter_structure_mcp:1.0.2",
       "transport": {
         "type": "stdio"
       }

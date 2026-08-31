@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:flutter_architect_mcp/core/logging/logger.dart';
+import 'package:flutter_architect_mcp/utils/path_utils.dart';
 
 class KnowledgeDocument {
   final String title;
@@ -23,13 +24,7 @@ class Retriever {
 
   void _loadDocuments() {
     try {
-      final scriptUri = Platform.script;
-      final scriptPath = scriptUri.isScheme('file') ? scriptUri.toFilePath() : '.';
-      String projectRoot = p.dirname(p.dirname(scriptPath));
-
-      if (!Directory(p.join(projectRoot, 'knowledge')).existsSync()) {
-        projectRoot = Directory.current.path;
-      }
+      String projectRoot = PathUtils.resolvePackageRoot();
 
       final knowledgeDir = Directory(p.join(projectRoot, 'knowledge'));
       if (knowledgeDir.existsSync()) {

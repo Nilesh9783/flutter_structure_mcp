@@ -9,6 +9,7 @@ import 'architecture_generator.dart';
 import 'state_generator.dart';
 import 'package:flutter_architect_mcp/technologies/flutter/generators/package_generator.dart';
 import 'package:flutter_architect_mcp/technologies/flutter/generators/feature_generator.dart';
+import 'package:flutter_architect_mcp/utils/path_utils.dart';
 
 class ProjectGenerator {
   final CopyService _copyService = CopyService();
@@ -53,14 +54,7 @@ class ProjectGenerator {
     }
 
     // Resolve templates path and packages config path
-    final scriptUri = Platform.script;
-    final scriptPath = scriptUri.isScheme('file') ? scriptUri.toFilePath() : '.';
-    String projectRoot = p.dirname(p.dirname(scriptPath));
-    
-    // Check if configuration exists at the resolved path, otherwise fallback to current directory
-    if (!Directory(p.join(projectRoot, 'templates')).existsSync()) {
-      projectRoot = Directory.current.path;
-    }
+    String projectRoot = PathUtils.resolvePackageRoot();
 
     final templatesPath = p.join(projectRoot, 'templates');
     final packagesYamlPath = p.join(projectRoot, 'config', 'packages.yaml');

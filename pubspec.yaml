@@ -1,6 +1,6 @@
 name: flutter_architect_mcp
 description: MCP server for Flutter, Laravel, Node, Python and Vue project architecture, security, memory, performance and code analysis.
-version: 1.0.0
+version: 1.0.2
 repository: https://github.com/Nilesh9783/flutter_structure_mcp
 
 environment:

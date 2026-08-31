@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'yaml_service.dart';
 import 'package:flutter_architect_mcp/core/models/finding.dart';
+import 'package:flutter_architect_mcp/utils/path_utils.dart';
 
 class CriteriaService {
   static final CriteriaService _instance = CriteriaService._internal();
@@ -128,12 +129,7 @@ class CriteriaService {
     if (_initialized) return;
 
     // 1. Resolve project root and load local criteria.yaml
-    final scriptUri = Platform.script;
-    final scriptPath = scriptUri.isScheme('file') ? scriptUri.toFilePath() : '.';
-    String projectRoot = p.dirname(p.dirname(scriptPath));
-    if (!Directory(p.join(projectRoot, 'config')).existsSync()) {
-      projectRoot = Directory.current.path;
-    }
+    String projectRoot = PathUtils.resolvePackageRoot();
 
     final criteriaYamlPath = p.join(projectRoot, 'config', 'criteria.yaml');
     _defaultCriteria = _yamlService.loadYamlFile(criteriaYamlPath);

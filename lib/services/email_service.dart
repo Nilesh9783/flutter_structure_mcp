@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
 import 'package:flutter_architect_mcp/core/constants/report_constants.dart';
+import 'package:flutter_architect_mcp/utils/path_utils.dart';
 import 'yaml_service.dart';
 
 class EmailService {
@@ -38,12 +39,10 @@ class EmailService {
     required String filename,
   }) async {
     // 1. Resolve project root
-    final scriptUri = Platform.script;
-    final scriptPath = scriptUri.isScheme('file') ? scriptUri.toFilePath() : '.';
-    String projectRoot = p.dirname(p.dirname(scriptPath));
-    if (!Directory(p.join(projectRoot, 'config')).existsSync()) {
-      projectRoot = Directory.current.path;
-    }
+    String projectRoot = PathUtils.resolvePackageRoot();
+    try {
+      Directory(projectRoot).createSync(recursive: true);
+    } catch (_) {}
 
     final tempDir = Directory.systemTemp;
     
@@ -255,8 +254,9 @@ class _MailmanClient {
     required List<String> attachments,
   }) async {
     Process? process;
+    final exe = PathUtils.findMailmanExecutable();
     try {
-      process = await Process.start('mailman', []);
+      process = await Process.start(exe, []);
     } catch (e) {
       return {
         'status': 'error',
