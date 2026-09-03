@@ -4,6 +4,7 @@ import 'package:path/path.dart' as p;
 import 'package:flutter_architect_mcp/core/models/finding.dart';
 import 'package:flutter_architect_mcp/technologies/base_analyzer.dart';
 import 'package:flutter_architect_mcp/technologies/flutter/analyzer/project_detector.dart';
+import 'package:flutter_architect_mcp/utils/solution_generator.dart';
 
 class LaravelAnalyzer implements BaseAnalyzer {
   @override
@@ -43,7 +44,7 @@ class LaravelAnalyzer implements BaseAnalyzer {
 
     await _scanDirectory(dir, projectPath, findings);
     await _scanComposerJson(projectPath, findings);
-    return findings;
+    return findings.map((f) => SolutionGenerator.attachSolutionAndPrompt(f)).toList();
   }
 
   Future<void> _scanDirectory(Directory dir, String rootPath, List<Finding> findings) async {

@@ -2,70 +2,67 @@ import 'package:flutter_architect_mcp/core/models/finding.dart';
 import 'retriever.dart';
 import 'package:flutter_architect_mcp/core/logging/logger.dart';
 import 'package:flutter_architect_mcp/services/criteria_service.dart';
+import 'package:flutter_architect_mcp/utils/solution_generator.dart';
 
 class RagService {
   final Retriever _retriever = Retriever();
 
-  /// Enriches findings with details from the local knowledge base if matches exist.
+  /// Enriches findings with details from the local knowledge base and generates tailored solutions and Claude prompts.
   List<Finding> enrichFindings(List<Finding> findings) {
     final enriched = <Finding>[];
     final criteriaService = CriteriaService();
 
     for (final rawFinding in findings) {
-      // 1. First dynamically enrich with Google Sheet rules
+      // 1. Dynamically enrich severity / confidence / thresholds with Google Sheet rules
       final f = criteriaService.enrichFindingWithSheet(rawFinding);
 
-      // Build a search query based on ID and Title
-      final query = '${f.id} ${f.title} ${f.category}';
-      final match = _retriever.retrieve(query);
+      // 2. Query knowledge base strictly for the exact rule ID
+      final match = _retriever.retrieve(f.id);
+
+      String parsedDescription = f.description;
+      String parsedRisk = f.risk;
+      String parsedRec = f.recommendation;
 
       if (match != null) {
         Logger.debug('RAG Match found for finding ${f.id}: ${match.title}');
-        
-        // Parse some sections from the markdown if possible, or append the entire content
         final fullContent = match.content;
-        
-        String parsedDescription = f.description;
-        String parsedRisk = f.risk;
-        String parsedRec = f.recommendation;
 
-        // Try extracting specific sections from Markdown
         final riskSection = _extractSection(fullContent, 'Why It Matters');
-        if (riskSection.isNotEmpty) parsedRisk = riskSection;
+        if (riskSection.isNotEmpty && (parsedRisk.isEmpty || parsedRisk.length < 30)) {
+          parsedRisk = riskSection;
+        }
 
         final recSection = _extractSection(fullContent, 'Recommended Fix');
-        if (recSection.isNotEmpty) parsedRec = recSection;
+        if (recSection.isNotEmpty && (parsedRec.isEmpty || parsedRec.length < 30)) {
+          parsedRec = recSection;
+        }
 
         final descSection = _extractSection(fullContent, 'Description');
-        if (descSection.isNotEmpty) parsedDescription = descSection;
-
-        final goodEx = _extractSection(fullContent, 'Good Example');
-        if (goodEx.isNotEmpty) {
-          parsedRec += '\n\n**Good Example:**\n$goodEx';
+        if (descSection.isNotEmpty && (parsedDescription.isEmpty || parsedDescription.length < 30)) {
+          parsedDescription = descSection;
         }
-        
-        final badEx = _extractSection(fullContent, 'Bad Example');
-        if (badEx.isNotEmpty) {
-          parsedDescription += '\n\n**Bad Example:**\n$badEx';
-        }
-
-        enriched.add(Finding(
-          id: f.id,
-          category: f.category,
-          severity: f.severity,
-          confidence: f.confidence,
-          title: f.title,
-          file: f.file,
-          line: f.line,
-          evidence: f.evidence,
-          description: parsedDescription,
-          risk: parsedRisk,
-          recommendation: parsedRec,
-          fixAvailable: f.fixAvailable,
-        ));
-      } else {
-        enriched.add(f);
       }
+
+      final findingWithRAG = Finding(
+        id: f.id,
+        category: f.category,
+        severity: f.severity,
+        confidence: f.confidence,
+        title: f.title,
+        file: f.file,
+        line: f.line,
+        evidence: f.evidence,
+        description: parsedDescription,
+        risk: parsedRisk,
+        recommendation: parsedRec,
+        suggestedFix: f.suggestedFix,
+        claudePrompt: f.claudePrompt,
+        fixAvailable: f.fixAvailable,
+      );
+
+      // 3. Attach accurate, tailored code solutions and Claude fix prompts
+      final fullyEnriched = SolutionGenerator.attachSolutionAndPrompt(findingWithRAG);
+      enriched.add(fullyEnriched);
     }
 
     return enriched;
@@ -77,12 +74,13 @@ class RagService {
     bool inSection = false;
 
     for (final line in lines) {
-      if (line.trim().startsWith('##') && line.contains(heading)) {
+      final trimmed = line.trim();
+      if (trimmed.startsWith('##') && trimmed.toLowerCase().contains(heading.toLowerCase())) {
         inSection = true;
         continue;
       }
       if (inSection) {
-        if (line.trim().startsWith('##')) {
+        if (trimmed.startsWith('##')) {
           break; // Next section started
         }
         sectionLines.add(line);

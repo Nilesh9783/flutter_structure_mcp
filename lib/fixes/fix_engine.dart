@@ -44,16 +44,33 @@ class FixEngine {
         final lines = content.split('\n');
         
         // Safety check: skip lines if the file index is out of bounds
-        if (f.line - 1 >= lines.length) continue;
+        if (f.line - 1 >= lines.length || f.line <= 0) continue;
 
         final targetLine = lines[f.line - 1];
 
         // Safe Fix 1: Cleartext HTTP URL rewrite
         if (f.id == 'SEC-NET-002' && targetLine.contains('http://')) {
           final updatedLine = targetLine.replaceAll('http://', 'https://');
-          final updatedLines = List<String>.from(lines);
-          updatedLines[f.line - 1] = updatedLine;
-          
+          suggestions.add(FixDiff(
+            filePath: f.file,
+            oldContent: targetLine.trim(),
+            newContent: updatedLine.trim(),
+          ));
+        }
+
+        // Safe Fix 2: Android AllowBackup disable
+        if (f.id == 'SEC-AND-001' && targetLine.contains('android:allowBackup="true"')) {
+          final updatedLine = targetLine.replaceAll('android:allowBackup="true"', 'android:allowBackup="false"');
+          suggestions.add(FixDiff(
+            filePath: f.file,
+            oldContent: targetLine.trim(),
+            newContent: updatedLine.trim(),
+          ));
+        }
+
+        // Safe Fix 3: Android Cleartext Traffic disable
+        if (f.id == 'SEC-AND-002' && targetLine.contains('android:usesCleartextTraffic="true"')) {
+          final updatedLine = targetLine.replaceAll('android:usesCleartextTraffic="true"', 'android:usesCleartextTraffic="false"');
           suggestions.add(FixDiff(
             filePath: f.file,
             oldContent: targetLine.trim(),
@@ -109,17 +126,20 @@ class FixEngine {
         }
       }
 
-      // 3. Run Dart/Flutter analyzer to ensure build integrity
-      Logger.info('Verifying changes by running analysis...');
-      final analysisResult = await ProcessRunner.run(
-        'flutter',
-        ['analyze'],
-        workingDirectory: projectPath,
-      );
+      // 3. Run Dart/Flutter analyzer to ensure build integrity (if flutter project)
+      final pubspec = File(p.join(projectPath, 'pubspec.yaml'));
+      if (pubspec.existsSync()) {
+        Logger.info('Verifying changes by running analysis...');
+        final analysisResult = await ProcessRunner.run(
+          'flutter',
+          ['analyze'],
+          workingDirectory: projectPath,
+        );
 
-      if (analysisResult.exitCode != 0) {
-        Logger.warning('Analysis failed after applying fixes. Rolling back changes...');
-        success = false;
+        if (analysisResult.exitCode != 0) {
+          Logger.warning('Analysis failed after applying fixes. Rolling back changes...');
+          success = false;
+        }
       }
     } catch (e, stack) {
       Logger.error('Error occurred while applying fixes', e, stack);

@@ -2,23 +2,24 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:flutter_architect_mcp/core/models/finding.dart';
 import 'package:flutter_architect_mcp/core/filesystem/file_cache.dart';
+import 'package:flutter_architect_mcp/utils/solution_generator.dart';
 
 class PerformanceEngine {
-  // Pattern to find controller creations in build() method
-  static final RegExp _controllerInBuildPattern = RegExp(
-    r'Widget\s+build\([\s\S]*?(?:TextEditingController|ScrollController|TabController|AnimationController)[\s\S]*?\}',
-    caseSensitive: false,
-  );
-
-  // Pattern to find ListView usage (non-builder)
   static final RegExp _listViewPattern = RegExp(
     r'ListView\s*\(\s*children\s*:',
     caseSensitive: false,
   );
 
-  // Pattern to detect API or Database call directly inside build method
-  static final RegExp _apiCallInBuildPattern = RegExp(
-    r'Widget\s+build\([\s\S]*?(?:http\.get|dio\.get|apiService\.|database\.|db\.)[\s\S]*?\}',
+  static const List<String> _controllerTypes = [
+    'TextEditingController',
+    'ScrollController',
+    'TabController',
+    'AnimationController',
+    'PageController',
+  ];
+
+  static final RegExp _apiCallPatterns = RegExp(
+    r'(?:http\.get|dio\.get|dio\.post|http\.post|apiService\.|database\.|db\.)',
     caseSensitive: false,
   );
 
@@ -48,47 +49,69 @@ class PerformanceEngine {
         final content = await entity.readAsString();
         final lines = content.split('\n');
 
-        // Check for controller initialization inside build method
-        if (_controllerInBuildPattern.hasMatch(content)) {
-          findings.add(Finding(
-            id: 'PERF-001',
-            category: 'PERFORMANCE',
-            severity: 'HIGH',
-            confidence: 'MEDIUM',
-            title: 'Controller Instantiation Inside Widget build() Method',
-            file: relativePath,
-            line: _findLine(lines, 'build('),
-            evidence: 'Controller instantiated inside build(...) method',
-            description: 'A controller is created inside the build() method of a widget in $relativePath.',
-            risk: 'Controllers will be re-instantiated on every single widget build/rebuild, resetting their states and causing CPU spikes/memory leaks.',
-            recommendation: 'Convert the widget to a StatefulWidget and instantiate controllers in initState() and dispose them in dispose().',
-            fixAvailable: false,
-          ));
-        }
+        bool inBuildMethod = false;
+        int buildBraceDepth = 0;
 
-        // Check for API calls inside build method
-        if (_apiCallInBuildPattern.hasMatch(content)) {
-          findings.add(Finding(
-            id: 'PERF-002',
-            category: 'PERFORMANCE',
-            severity: 'HIGH',
-            confidence: 'MEDIUM',
-            title: 'API / Database Call Inside Widget build() Method',
-            file: relativePath,
-            line: _findLine(lines, 'build('),
-            evidence: 'API/DB call within build(...)',
-            description: 'Detected a network request or database operation inside the build() method in $relativePath.',
-            risk: 'Running synchronous or asynchronous API/DB operations inside build() causes severe interface lags, UI blocking, and generates excessive, duplicated calls on rebuild.',
-            recommendation: 'Trigger the network or database requests inside initState() or within controller lifecycle methods, and bind the widget using FutureBuilder (referencing a cached Future) or state managers.',
-            fixAvailable: false,
-          ));
-        }
-
-        // Check for ListView instead of ListView.builder
         for (int i = 0; i < lines.length; i++) {
-          final lineContent = lines[i];
-          if (_listViewPattern.hasMatch(lineContent)) {
-            findings.add(Finding(
+          final line = lines[i];
+          final trimmed = line.trim();
+
+          // Track build method boundaries
+          if (trimmed.startsWith('Widget build(') || trimmed.contains('Widget build(BuildContext')) {
+            inBuildMethod = true;
+            buildBraceDepth = 0;
+          }
+
+          if (inBuildMethod) {
+            buildBraceDepth += _countOccurrences(line, '{') - _countOccurrences(line, '}');
+            if (buildBraceDepth <= 0 && line.contains('}')) {
+              inBuildMethod = false;
+            } else {
+              // 1. Check for controller initialization inside build method
+              for (final ctrlType in _controllerTypes) {
+                if (line.contains('$ctrlType(') && !trimmed.startsWith('//')) {
+                  final finding = Finding(
+                    id: 'PERF-001',
+                    category: 'PERFORMANCE',
+                    severity: 'HIGH',
+                    confidence: 'HIGH',
+                    title: 'Controller Instantiation Inside Widget build() Method',
+                    file: relativePath,
+                    line: i + 1,
+                    evidence: trimmed,
+                    description: 'A $ctrlType is instantiated inside build() at line ${i + 1} of $relativePath.',
+                    risk: 'Controllers will be re-instantiated on every single widget build/rebuild, resetting their states and causing CPU spikes/memory leaks.',
+                    recommendation: 'Convert the widget to a StatefulWidget, instantiate $ctrlType in initState(), and dispose it in dispose().',
+                    fixAvailable: false,
+                  );
+                  findings.add(SolutionGenerator.attachSolutionAndPrompt(finding));
+                }
+              }
+
+              // 2. Check for API / DB calls inside build method
+              if (_apiCallPatterns.hasMatch(line) && !trimmed.startsWith('//')) {
+                final finding = Finding(
+                  id: 'PERF-002',
+                  category: 'PERFORMANCE',
+                  severity: 'HIGH',
+                  confidence: 'HIGH',
+                  title: 'API / Database Call Inside Widget build() Method',
+                  file: relativePath,
+                  line: i + 1,
+                  evidence: trimmed,
+                  description: 'Detected a network or database call inside build() at line ${i + 1} of $relativePath.',
+                  risk: 'Running synchronous or asynchronous API/DB operations inside build() causes severe interface lags, UI blocking, and generates excessive, duplicated calls on rebuild.',
+                  recommendation: 'Trigger the network or database requests inside initState() or within controller lifecycle methods, and bind the widget using FutureBuilder (referencing a cached Future) or state managers.',
+                  fixAvailable: false,
+                );
+                findings.add(SolutionGenerator.attachSolutionAndPrompt(finding));
+              }
+            }
+          }
+
+          // 3. Check for ListView instead of ListView.builder
+          if (_listViewPattern.hasMatch(line) && !trimmed.startsWith('//')) {
+            final finding = Finding(
               id: 'PERF-003',
               category: 'PERFORMANCE',
               severity: 'MEDIUM',
@@ -96,12 +119,13 @@ class PerformanceEngine {
               title: 'Use of Static ListView Instead of Lazy ListView.builder',
               file: relativePath,
               line: i + 1,
-              evidence: lineContent.trim(),
-              description: 'Using "ListView(children: ...)" instead of "ListView.builder(...)".',
+              evidence: trimmed,
+              description: 'Using "ListView(children: ...)" instead of "ListView.builder(...)" at line ${i + 1}.',
               risk: 'A standard ListView instantiates all children items at once, regardless of whether they are visible on screen, causing memory pressure and rendering delays for long lists.',
               recommendation: 'Refactor to "ListView.builder(...)" to enable lazy-loading and item recycling for better scrolling performance.',
               fixAvailable: false,
-            ));
+            );
+            findings.add(SolutionGenerator.attachSolutionAndPrompt(finding));
           }
         }
       } catch (_) {}
@@ -110,10 +134,7 @@ class PerformanceEngine {
     return findings;
   }
 
-  int _findLine(List<String> lines, String keyword) {
-    for (int i = 0; i < lines.length; i++) {
-      if (lines[i].contains(keyword)) return i + 1;
-    }
-    return 1;
+  int _countOccurrences(String source, String pattern) {
+    return pattern.allMatches(source).length;
   }
 }

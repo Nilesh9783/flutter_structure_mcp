@@ -10,6 +10,8 @@ class Finding {
   final String description;
   final String risk;
   final String recommendation;
+  final String suggestedFix; // Specific code solution / snippet
+  final String claudePrompt; // Direct command / prompt for Claude to fix this issue
   final bool fixAvailable;
 
   Finding({
@@ -24,6 +26,8 @@ class Finding {
     required this.description,
     required this.risk,
     required this.recommendation,
+    this.suggestedFix = '',
+    this.claudePrompt = '',
     this.fixAvailable = false,
   });
 
@@ -40,6 +44,8 @@ class Finding {
       description: json['description'] ?? '',
       risk: json['risk'] ?? '',
       recommendation: json['recommendation'] ?? '',
+      suggestedFix: json['suggestedFix'] ?? '',
+      claudePrompt: json['claudePrompt'] ?? '',
       fixAvailable: json['fixAvailable'] ?? false,
     );
   }
@@ -57,8 +63,44 @@ class Finding {
       'description': description,
       'risk': risk,
       'recommendation': recommendation,
+      'suggestedFix': suggestedFix,
+      'claudePrompt': claudePrompt,
       'fixAvailable': fixAvailable,
     };
+  }
+
+  Finding copyWith({
+    String? id,
+    String? category,
+    String? severity,
+    String? confidence,
+    String? title,
+    String? file,
+    int? line,
+    String? evidence,
+    String? description,
+    String? risk,
+    String? recommendation,
+    String? suggestedFix,
+    String? claudePrompt,
+    bool? fixAvailable,
+  }) {
+    return Finding(
+      id: id ?? this.id,
+      category: category ?? this.category,
+      severity: severity ?? this.severity,
+      confidence: confidence ?? this.confidence,
+      title: title ?? this.title,
+      file: file ?? this.file,
+      line: line ?? this.line,
+      evidence: evidence ?? this.evidence,
+      description: description ?? this.description,
+      risk: risk ?? this.risk,
+      recommendation: recommendation ?? this.recommendation,
+      suggestedFix: suggestedFix ?? this.suggestedFix,
+      claudePrompt: claudePrompt ?? this.claudePrompt,
+      fixAvailable: fixAvailable ?? this.fixAvailable,
+    );
   }
 
   @override

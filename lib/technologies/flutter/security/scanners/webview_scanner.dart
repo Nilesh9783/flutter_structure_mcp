@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:flutter_architect_mcp/core/models/finding.dart';
 import 'package:flutter_architect_mcp/core/filesystem/file_cache.dart';
+import 'package:flutter_architect_mcp/utils/solution_generator.dart';
 
 class WebViewScanner {
   // Pattern to find unrestricted JavaScript Mode
@@ -53,55 +54,49 @@ class WebViewScanner {
 
       try {
         final content = await entity.readAsString();
+        final lines = content.split('\n');
 
-        // Check for unrestricted JS Mode
-        final hasUnrestrictedJs =
-            _jsUnrestrictedPattern.hasMatch(content) ||
-            _webViewControllerJsPattern.hasMatch(content);
-        if (hasUnrestrictedJs) {
-          findings.add(
-            Finding(
+        for (int i = 0; i < lines.length; i++) {
+          final line = lines[i];
+          if (line.trim().startsWith('//')) continue;
+
+          // Check for unrestricted JS Mode
+          if (_jsUnrestrictedPattern.hasMatch(line) || _webViewControllerJsPattern.hasMatch(line)) {
+            final finding = Finding(
               id: 'SEC-WV-001',
               category: 'SECURITY',
               severity: 'MEDIUM',
               confidence: 'HIGH',
               title: 'WebView JavaScript Execution Enabled Unrestrictedly',
               file: relativePath,
-              line: 1,
-              evidence: 'JavaScriptMode.unrestricted',
-              description:
-                  'Detected a WebView instantiated with unrestricted JavaScript execution enabled.',
-              risk:
-                  'Enabling JavaScript in WebViews allows loaded pages to execute code. If untrusted remote content is displayed, it could lead to Cross-Site Scripting (XSS) attacks compromising local app data or bridge APIs.',
-              recommendation:
-                  'Only enable JavaScript if strictly required. Ensure that navigation is restricted to HTTPS and approved domains using navigation delegates.',
+              line: i + 1,
+              evidence: line.trim(),
+              description: 'Detected a WebView instantiated with unrestricted JavaScript execution enabled at line ${i + 1}.',
+              risk: 'Enabling JavaScript in WebViews allows loaded pages to execute code. If untrusted remote content is displayed, it could lead to Cross-Site Scripting (XSS) attacks compromising local app data or bridge APIs.',
+              recommendation: 'Only enable JavaScript if strictly required. Ensure that navigation is restricted to HTTPS and approved domains using navigation delegates.',
               fixAvailable: false,
-            ),
-          );
-        }
+            );
+            findings.add(SolutionGenerator.attachSolutionAndPrompt(finding));
+          }
 
-        // Check navigation delegate on WebViews
-        if (_webViewCreationPattern.hasMatch(content) &&
-            !content.contains('navigationDelegate')) {
-          findings.add(
-            Finding(
+          // Check navigation delegate on WebViews
+          if (_webViewCreationPattern.hasMatch(line) && !content.contains('navigationDelegate')) {
+            final finding = Finding(
               id: 'SEC-WV-002',
               category: 'SECURITY',
               severity: 'MEDIUM',
               confidence: 'MEDIUM',
               title: 'WebView Lacks Navigation Validation Delegate',
               file: relativePath,
-              line: 1,
-              evidence: 'WebView(...) without navigationDelegate',
-              description:
-                  'A WebView was instantiated without defining a navigationDelegate to filter loaded URLs.',
-              risk:
-                  'Without URL checking, users or malicious links can navigate the WebView to arbitrary external domains, which might steal tokens or impersonate interfaces.',
-              recommendation:
-                  'Implement navigationDelegate / setNavigationDelegate and reject navigation requests to unknown or non-allowlisted domains.',
+              line: i + 1,
+              evidence: line.trim(),
+              description: 'A WebView was instantiated without defining a navigationDelegate to filter loaded URLs at line ${i + 1}.',
+              risk: 'Without URL checking, users or malicious links can navigate the WebView to arbitrary external domains, which might steal tokens or impersonate interfaces.',
+              recommendation: 'Implement navigationDelegate / setNavigationDelegate and reject navigation requests to unknown or non-allowlisted domains.',
               fixAvailable: false,
-            ),
-          );
+            );
+            findings.add(SolutionGenerator.attachSolutionAndPrompt(finding));
+          }
         }
       } catch (_) {}
     }

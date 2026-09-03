@@ -52,43 +52,61 @@ class Retriever {
     }
   }
 
-  /// Retrieves the most relevant knowledge document matching the given query tokens.
-  KnowledgeDocument? retrieve(String query) {
+  /// Retrieves the knowledge document that strictly matches the given rule ID or specific distinctive query.
+  KnowledgeDocument? retrieve(String ruleIdOrQuery) {
     if (_documents.isEmpty) return null;
 
-    final tokens = query
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9\s]'), '')
-        .split(RegExp(r'\s+'))
-        .where((t) => t.length >= 3)
-        .toList();
+    final target = ruleIdOrQuery.trim().toUpperCase();
 
-    if (tokens.isEmpty) return null;
-
-    KnowledgeDocument? bestDoc;
-    double bestScore = 0.0;
-
+    // 1. Exact match by Document Title (e.g. "SEC-SEC-001" or "MEM-001")
     for (final doc in _documents) {
-      double score = 0.0;
-      final docLower = doc.content.toLowerCase();
-      final titleLower = doc.title.toLowerCase();
-
-      for (final token in tokens) {
-        if (titleLower.contains(token)) {
-          score += 10.0; // High score for title match
-        }
-        if (docLower.contains(token)) {
-          score += 1.0;  // Standard score for body match
-        }
-      }
-
-      if (score > bestScore) {
-        bestScore = score;
-        bestDoc = doc;
+      final docTitle = doc.title.toUpperCase();
+      if (docTitle == target || target.startsWith('$docTitle ') || target.startsWith('$docTitle:')) {
+        return doc;
       }
     }
 
-    // Only return if it meets a minimum matching threshold
-    return bestScore > 1.0 ? bestDoc : null;
+    // 2. Exact Rule ID token containment check
+    for (final doc in _documents) {
+      final docTitle = doc.title.toUpperCase();
+      final words = target.split(RegExp(r'[^A-Z0-9_\-]+'));
+      if (words.contains(docTitle)) {
+        return doc;
+      }
+    }
+
+    // 3. Distinctive keyword matching (ignoring generic categories like SECURITY, MEMORY, PERFORMANCE)
+    final ignoredGenericWords = {'SECURITY', 'MEMORY', 'PERFORMANCE', 'CODE_QUALITY', 'DEPENDENCY', 'LEAK', 'ISSUE', 'FLUTTER', 'CODE'};
+    final queryTokens = target
+        .split(RegExp(r'[^A-Z0-9]+'))
+        .where((t) => t.length >= 4 && !ignoredGenericWords.contains(t))
+        .toList();
+
+    if (queryTokens.isNotEmpty) {
+      KnowledgeDocument? bestDoc;
+      int bestScore = 0;
+
+      for (final doc in _documents) {
+        int score = 0;
+        final docContentUpper = doc.content.toUpperCase();
+
+        for (final token in queryTokens) {
+          if (docContentUpper.contains(token)) {
+            score += 1;
+          }
+        }
+
+        if (score > bestScore && score >= 2) {
+          bestScore = score;
+          bestDoc = doc;
+        }
+      }
+
+      if (bestDoc != null) {
+        return bestDoc;
+      }
+    }
+
+    return null;
   }
 }

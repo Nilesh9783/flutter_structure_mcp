@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Download View - Code Quality & Security Audit Report</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #ffffff;
+            color: #1e293b;
+            line-height: 1.5;
+            padding: 40px;
+            margin: 0 auto;
+            max-width: 900px;
+        }
+
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 24px;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+
+        .btn-primary {
+            background-color: #2563eb;
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-secondary {
+            background-color: #ffffff;
+            border-color: #cbd5e1;
+            color: #334155;
+        }
+
+        .btn-secondary:hover {
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+
+        .header-card {
+            background-color: #081121;
+            border-radius: 8px;
+            color: #ffffff;
+            padding: 30px 24px;
+            margin-bottom: 30px;
+        }
+
+        .header-card h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+            color: #ffffff;
+        }
+
+        .header-card p {
+            font-size: 13px;
+            color: #94a3b8;
+            margin: 6px 0 0 0;
+        }
+
+        .header-divider {
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            margin: 20px 0;
+        }
+
+        .meta-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .meta-col {
+            flex: 1;
+            min-width: 120px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .meta-label {
+            font-size: 10px;
+            color: #64748b;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .meta-val {
+            font-size: 13px;
+            color: #f1f5f9;
+            font-weight: 600;
+        }
+
+        h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-top: 30px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 6px;
+            page-break-after: avoid;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+            font-size: 12px;
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 10px;
+            letter-spacing: 0.03em;
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+            vertical-align: top;
+        }
+
+        tr:nth-child(even) td {
+            background-color: #f8fafc;
+        }
+
+        code {
+            font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+            background-color: #f1f5f9;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #0f172a;
+        }
+
+        .badge {
+            display: inline-block;
+            font-weight: 700;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .badge-critical, .badge-high {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .badge-medium {
+            background-color: #fef3c7;
+            color: #b45309;
+        }
+
+        .badge-low {
+            background-color: #dcfce7;
+            color: #15803d;
+        }
+
+        .action-box {
+            background-color: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            border-radius: 0 4px 4px 0;
+            padding: 14px 18px;
+            margin-bottom: 24px;
+            page-break-inside: avoid;
+        }
+
+        .action-box-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #1e3a8a;
+            margin-bottom: 8px;
+        }
+
+        .action-box ul {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 12px;
+            color: #1e40af;
+        }
+
+        .action-box li {
+            margin-bottom: 4px;
+        }
+
+        .code-box {
+            background-color: #0f172a;
+            border-radius: 6px;
+            padding: 16px;
+            margin-top: 10px;
+            margin-bottom: 24px;
+            overflow-x: auto;
+            page-break-inside: avoid;
+        }
+
+        .code-box pre {
+            margin: 0;
+            font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+            font-size: 11px;
+            color: #cbd5e1;
+            line-height: 1.5;
+        }
+
+        .code-box-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #475569;
+            margin-top: 14px;
+        }
+
+        .action-plan-section {
+            page-break-inside: avoid;
+        }
+
+        @media print {
+            .action-bar {
+                display: none !important;
+            }
+            body {
+                padding: 0;
+                max-width: 100%;
+            }
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 10000; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(11, 15, 25, 0.85); 
+            backdrop-filter: blur(5px); 
+            align-items: center; 
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #ffffff; 
+            border: 1px solid #cbd5e1; 
+            padding: 24px; 
+            border-radius: 12px; 
+            max-width: 550px; 
+            width: 90%; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15); 
+            position: relative;
+            animation: modalFadeIn 0.3s ease-out;
+            color: #1e293b;
+            text-align: left;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal-close {
+            position: absolute; 
+            right: 1.25rem; 
+            top: 1rem; 
+            font-size: 1.5rem; 
+            color: #64748b; 
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .modal-close:hover {
+            color: #2563eb;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block; 
+            font-size: 12px; 
+            color: #475569; 
+            margin-bottom: 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .form-control {
+            width: 100%; 
+            padding: 10px; 
+            border-radius: 8px; 
+            border: 1px solid #cbd5e1; 
+            background-color: #ffffff; 
+            color: #1e293b; 
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-control:focus {
+            border-color: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="action-bar" style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.85rem 1.25rem; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;">
+                <span style="background: #0f172a; color: white; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 4px; text-transform: uppercase;">File 2 of 2</span>
+                <span style="font-weight: 700; color: #0f172a; font-size: 1rem;">📄 Print-Ready Audit Document (security-report-pdf.html)</span>
+            </div>
+            <p style="font-size: 0.8rem; color: #64748b; margin: 0; line-height: 1.4;">
+                <strong>What this file includes:</strong> Formatted A4 layout with Executive Summary tables, scoring deduction breakdown, 3-Phase Remediation Action Plan, and Master Claude Batch Fix Prompt.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <a class="btn btn-secondary" href="security-report.html" style="font-weight: 600;">📊 Interactive Dashboard</a>
+            <button class="btn btn-primary" onclick="window.print()" style="font-weight: 700;">🖨️ Save as PDF / Print</button>
+            <button class="btn btn-secondary" onclick="downloadPdf()">📥 Direct PDF Download</button>
+            <button class="btn btn-secondary" style="background-color: #22c55e; color: #0b0f19; border: none; font-weight: 600;" onclick="openEmailModal()">Send Email</button>
+        </div>
+    </div>
+
+    <div id="report-content">
+        <div class="header-card">
+            <h1>Code Quality & Security Audit Report</h1>
+            <p>Comprehensive Static Code & Dependency Analysis</p>
+            <div class="header-divider"></div>
+            <div class="meta-grid">
+                <div class="meta-col">
+                    <span class="meta-label">Project</span>
+                    <span class="meta-val">TestApp</span>
+                </div>
+                <div class="meta-col">
+                    <span class="meta-label">Dart SDK</span>
+                    <span class="meta-val">3.5.0</span>
+                </div>
+                <div class="meta-col">
+                    <span class="meta-label">Target Platforms</span>
+                    <span class="meta-val">android, ios</span>
+                </div>
+                <div class="meta-col">
+                    <span class="meta-label">State / Network</span>
+                    <span class="meta-val">Bloc / Dio</span>
+                </div>
+            </div>
+        </div>
+
+        <h2>1. Executive Summary & Category Breakdown</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 40%;">Category</th>
+                    <th style="text-align: center; width: 15%;">High Severity</th>
+                    <th style="text-align: center; width: 15%;">Medium Severity</th>
+                    <th style="text-align: center; width: 15%;">Low Severity</th>
+                    <th style="text-align: center; width: 15%;">Total Issues</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Security & Secrets</td>
+                    <td style="text-align: center; color: #b91c1c; font-weight: 700;">1</td>
+                    <td style="text-align: center; color: #b45309; font-weight: normal;">0</td>
+                    <td style="text-align: center; color: #15803d; font-weight: normal;">0</td>
+                    <td style="text-align: center; font-weight: bold;">1</td>
+                </tr>
+                <tr>
+                    <td>Performance & UI Lag</td>
+                    <td style="text-align: center; color: #b91c1c; font-weight: normal;">0</td>
+                    <td style="text-align: center; color: #b45309; font-weight: normal;">0</td>
+                    <td style="text-align: center; color: #15803d; font-weight: normal;">0</td>
+                    <td style="text-align: center; font-weight: bold;">0</td>
+                </tr>
+                <tr>
+                    <td>Memory & Lifecycle Leaks</td>
+                    <td style="text-align: center; color: #b91c1c; font-weight: normal;">0</td>
+                    <td style="text-align: center; color: #b45309; font-weight: normal;">0</td>
+                    <td style="text-align: center; color: #15803d; font-weight: normal;">0</td>
+                    <td style="text-align: center; font-weight: bold;">0</td>
+                </tr>
+                <tr>
+                    <td>Maintainability & Class Size</td>
+                    <td style="text-align: center; color: #b91c1c; font-weight: normal;">0</td>
+                    <td style="text-align: center; color: #b45309; font-weight: normal;">0</td>
+                    <td style="text-align: center; color: #15803d; font-weight: normal;">0</td>
+                    <td style="text-align: center; font-weight: bold;">0</td>
+                </tr>
+                <tr style="font-weight: bold; background-color: #f1f5f9 !important; border-top: 2px solid #cbd5e1;">
+                    <td>Total Detected Issues</td>
+                    <td style="text-align: center;">1</td>
+                    <td style="text-align: center;">0</td>
+                    <td style="text-align: center;">0</td>
+                    <td style="text-align: center; color: #2563eb;">1</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>2. Critical Security Findings</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 15%;">Rule ID</th>
+                    <th style="width: 12%;">Severity</th>
+                    <th style="width: 30%;">File Location</th>
+                    <th style="text-align: center; width: 8%;">Line</th>
+                    <th style="width: 35%;">Finding Details & Risk</th>
+                </tr>
+            </thead>
+            <tbody>
+                            <tr>
+              <td><code>SEC-001</code></td>
+              <td><span class="badge badge-critical">&nbsp;CRITICAL&nbsp;</span></td>
+              <td><code>lib/core/auth.dart</code></td>
+              <td style="text-align: center;">5</td>
+              <td><strong>Hardcoded Secret Exposure (authKey)</strong>: Hardcoded secret at line 5.<br/><em style="font-size: 11px; color: #64748b; display: block; margin-top: 4px;">Risk: Token exposure</em></td>
+            </tr>
+          
+            </tbody>
+        </table>
+
+        <div class="action-box">
+            <div class="action-box-title">Security Remediation Action Items</div>
+            <ul>
+                <li>Migrate to .env</li>
+            </ul>
+        </div>
+
+        <h2>3. High-Priority Performance Flaws: Controller in build()</h2>
+        <p style="font-size: 11px; color: #64748b; margin-top: -6px; margin-bottom: 12px;">Instantiating controllers inside build() forces memory re-allocations on every frame render, causing UI stutter, dropped text inputs, and lost scroll states.</p>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Component / Area</th>
+                    <th style="width: 45%;">File Path</th>
+                    <th style="text-align: center; width: 10%;">Line</th>
+                    <th style="width: 20%;">Issue Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="4" style="text-align: center; color: #64748b; padding: 16px;">No performance issues detected.</td></tr>
+            </tbody>
+        </table>
+
+        <div class="code-box-title">Standard Fix Architecture:</div>
+        <div class="code-box">
+            <pre><code>class _SafeInputWidgetState extends State&lt;SafeInputWidget&gt; {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(); // Allocated once
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose(); // Safely freed from memory
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =&gt; TextField(controller: _controller);
+}</code></pre>
+        </div>
+
+        <h2>4. Memory & Resource Leaks</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Issue Type</th>
+                    <th style="width: 45%;">File Path</th>
+                    <th style="text-align: center; width: 10%;">Line</th>
+                    <th style="width: 20%;">Hazard</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="4" style="text-align: center; color: #64748b; padding: 16px;">No memory leaks detected.</td></tr>
+            </tbody>
+        </table>
+
+        <h2>5. Class Bloat & Technical Debt (Files > 500 LOC)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 45%;">File Location</th>
+                    <th style="text-align: center; width: 10%;">Lines</th>
+                    <th style="width: 20%;">Category / Focus Area</th>
+                    <th style="width: 25%;">Architectural Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="4" style="text-align: center; color: #64748b; padding: 16px;">No structural debt issues detected.</td></tr>
+            </tbody>
+        </table>
+
+        <h2>6. Unresolved Production TODOs</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 60%;">File Path</th>
+                    <th style="text-align: center; width: 10%;">Line</th>
+                    <th style="width: 30%;">Missing Feature / Incomplete Code</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="3" style="text-align: center; color: #64748b; padding: 16px;">No unresolved TODO comments detected.</td></tr>
+            </tbody>
+        </table>
+
+        <div class="action-plan-section">
+            <h2>7. Recommended Action Plan</h2>
+            <div style="font-size: 12px; margin-bottom: 12px;">
+                <strong>Phase 1 — Hotfix (Days 1–2):</strong>
+                <ul style="margin: 4px 0 12px 0; padding-left: 20px;">
+                    <li>Migrate to .env</li>
+                </ul>
+                
+                <strong>Phase 2 — Performance & Memory (Days 3–5):</strong>
+                <ul style="margin: 4px 0 12px 0; padding-left: 20px;">
+                    <li>No high-priority performance or lifecycle leaks to address.</li>
+                </ul>
+                
+                <strong>Phase 3 — Refactoring & Debt (Week 2):</strong>
+                <ul style="margin: 4px 0 0 0; padding-left: 20px;">
+                    <li>No code quality or maintainability changes proposed for this phase.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="action-plan-section">
+            <h2>8. Master Claude AI Fix Command (Automated Batch Fix)</h2>
+            <p style="font-size: 11px; color: #64748b; margin-top: -6px; margin-bottom: 12px;">Pass the prompt below to Claude to automatically apply non-breaking fixes for all identified findings:</p>
+            <div class="code-box">
+                <pre><code># 🛠️ Master Fix Command for Claude
+
+Please review and resolve the following 1 audit finding(s) in the project.
+CRITICAL: Preserve all existing functionality, imports, styles, and public APIs while applying these fixes.
+
+## 📁 File: `lib/core/auth.dart` (1 issue)
+
+### 1. [SECURITY - CRITICAL] Hardcoded Secret Exposure (authKey) (Line 5)
+- **Evidence:** `const authKey = "my_private_auth_token_9999";`
+- **Fix Instruction:**
+```
+// In lib/core/auth.dart (Line 5):
+// Step 1: Remove hardcoded credential and store it in environment config or secure storage.
+// Step 2: Use flutter_dotenv or flutter_secure_storage:
+
+// Option A: Using flutter_dotenv (.env file):
+// Add key to .env: API_SECRET_KEY=your_value_here
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+final apiKey = dotenv.env['API_SECRET_KEY'] ?? '';
+
+// Option B: Using flutter_secure_storage (for runtime sensitive tokens):
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+final storage = const FlutterSecureStorage();
+final apiKey = await storage.read(key: 'api_secret_key');
+```
+---
+
+### Fix Rules & Constraints:
+1. DO NOT break existing functionality, imports, styles, or public APIs.
+2. If packages are required (e.g. `flutter_secure_storage` or `flutter_dotenv`), add them to `pubspec.yaml` / `package.json` appropriately.
+3. Ensure no regressions or compilation errors are introduced.</code></pre>
+            </div>
+        </div>
+
+        <h2>8. Analysis Criteria Observed</h2>
+<p style="font-size: 11px; color: #64748b; margin-top: -6px; margin-bottom: 12px;">The project is audited against the following rules:</p>
+<div style="font-size: 11px; color: #334155; margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 10px;">
+<div style="width: 48%; min-width: 250px; background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; box-sizing: border-box;">
+<strong style="color: #0f172a; border-bottom: 1px solid #cbd5e1; display: block; padding-bottom: 2px; margin-bottom: 4px;">Code Quality</strong>
+<ul style="margin: 0; padding-left: 12px; list-style-type: square; color: #475569;">
+<li><strong>Proper use of const and final:</strong> If widget not updated once declear and vaeriable value will never change once declear then use const and final with decration <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: const_possible == true
+assignment_count == 1)</span></li>
+<li><strong>Large File LOC:</strong> Trigger when a file has more than 500 non-empty, non-comment code lines <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: file_code_loc > 500)</span></li>
+<li><strong>Large Class LOC:</strong> Trigger when a class exceeds configured LOC threshold <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: class_code_loc > 300)</span></li>
+<li><strong>Large Function LOC:</strong> Trigger when a function/method exceeds configured LOC threshold <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: function_code_loc > 80)</span></li>
+<li><strong>Unused Widgets/Classes/Functions:</strong> Declared widget/class/function has no references <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: reference_count == 0)</span></li>
+<li><strong>Unused Imports:</strong> Imported symbol is never referenced <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: import_reference_count == 0)</span></li>
+<li><strong>Unreachable Branch:</strong> Branch can never execute based on static control-flow analysis <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: unreachable == true)</span></li>
+<li><strong>High Cyclomatic Complexity:</strong> Function exceeds complexity threshold <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: complexity > 10)</span></li>
+<li><strong>Duplicate Code:</strong> Similar code block exceeds configured similarity threshold <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: similarity >= 0.85)</span></li>
+<li><strong>Large Build Method:</strong> Build method exceeds configured size <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: build_loc > 80)</span></li>
+<li><strong>Deep Widget Nesting:</strong> Widget tree nesting exceeds threshold <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: depth > 8)</span></li>
+<li><strong>Broad State Rebuild:</strong> State update potentially rebuilds unnecessarily large widget subtree <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Configurable)</span></li>
+<li><strong>Missing Const Opportunity:</strong> Constructor/widget can safely be const but is not <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: const_possible == true)</span></li>
+<li><strong>Improper final Usage:</strong> Local variable never reassigned and can be final <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: assignment_count == 1)</span></li>
+<li><strong>Unsafe Late Usage:</strong> late variable may be accessed before initialization or is unnecessary <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Configurable)</span></li>
+<li><strong>Naming Convention Violation:</strong> Classes, variables, methods/files violate Dart naming conventions <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Dart convention)</span></li>
+<li><strong>Empty Catch Block:</strong> Catch block has no meaningful handling/logging/rethrow <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: catch_body_effective_statements == 0)</span></li>
+</ul>
+</div>
+<div style="width: 48%; min-width: 250px; background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; box-sizing: border-box;">
+<strong style="color: #0f172a; border-bottom: 1px solid #cbd5e1; display: block; padding-bottom: 2px; margin-bottom: 4px;">Security</strong>
+<ul style="margin: 0; padding-left: 12px; list-style-type: square; color: #475569;">
+<li><strong>Hardcoded API Key:</strong> API key pattern detected in source/config <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Pattern + entropy score)</span></li>
+<li><strong>Payment Gateway Credential:</strong> Payment provider private/secret credential detected <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Provider pattern)</span></li>
+<li><strong>Firebase Service Account:</strong> Firebase service-account JSON/private key detected <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Credential pattern)</span></li>
+<li><strong>Private Key/Certificate:</strong> PEM/private key/signing material detected <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: private_key_detected == true)</span></li>
+<li><strong>Insecure Token Storage:</strong> Access/refresh tokens stored in SharedPreferences/plain files <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Sensitive token + insecure storage)</span></li>
+<li><strong>HTTP/Cleartext Traffic:</strong> Non-TLS HTTP endpoint or cleartext platform configuration detected <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: http:// / cleartext enabled)</span></li>
+<li><strong>Certificate Validation Bypass:</strong> Client bypasses certificate validation <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Trust-all callback/API)</span></li>
+<li><strong>Unsafe WebView Configuration:</strong> JavaScript/file access/untrusted navigation enabled without controls <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Risk pattern)</span></li>
+<li><strong>Unsafe Dynamic Data Handling:</strong> Unsafe eval-like/dynamic deserialization or execution pattern detected <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Risk API pattern)</span></li>
+<li><strong>Sensitive Data in Logs:</strong> Token/password/payment/PII passed to logging APIs <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Sensitive variable/pattern)</span></li>
+<li><strong>Android Insecure Configuration:</strong> Debuggable release config, exported components or permissive network settings <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Risk configuration)</span></li>
+<li><strong>iOS Insecure Configuration:</strong> ATS exceptions, insecure entitlements or overly permissive settings <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Risk configuration)</span></li>
+<li><strong>Overly Permissive Firebase Rules:</strong> Firestore/Realtime Database allows broad unauthenticated read/write <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Broad read/write access)</span></li>
+</ul>
+</div>
+<div style="width: 48%; min-width: 250px; background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; box-sizing: border-box;">
+<strong style="color: #0f172a; border-bottom: 1px solid #cbd5e1; display: block; padding-bottom: 2px; margin-bottom: 4px;">Memory Leak</strong>
+<ul style="margin: 0; padding-left: 12px; list-style-type: square; color: #475569;">
+<li><strong>Unclosed StreamSubscription:</strong> StreamSubscription created without matching cancellation/disposal <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: cancel_missing == true)</span></li>
+<li><strong>Unclosed Timer:</strong> Timer created without cancellation <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: cancel_missing == true)</span></li>
+<li><strong>AnimationController Not Disposed:</strong> AnimationController created in State without dispose <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: dispose_missing == true)</span></li>
+<li><strong>TextEditingController Not Disposed:</strong> TextEditingController retained without disposal <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: dispose_missing == true)</span></li>
+<li><strong>Scroll/Page Controller Not Disposed:</strong> ScrollController/PageController created without disposal <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: dispose_missing == true)</span></li>
+<li><strong>Listener Not Removed:</strong> addListener/addObserver without matching remove <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: remove_missing == true)</span></li>
+<li><strong>Unnecessary StatefulWidget:</strong> StatefulWidget has no mutable state or lifecycle requirement <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: stateful_need == false)</span></li>
+<li><strong>Missing Const StatelessWidget:</strong> Immutable widget does not use const constructor <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: const_possible == true)</span></li>
+<li><strong>Long-Lived Closure Captures State/Context:</strong> Long-lived callback captures State/BuildContext <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Risk pattern)</span></li>
+<li><strong>Unbounded In-Memory Collection:</strong> List/map/cache grows without size/eviction control <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Configurable size/eviction rule)</span></li>
+</ul>
+</div>
+<div style="width: 48%; min-width: 250px; background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; box-sizing: border-box;">
+<strong style="color: #0f172a; border-bottom: 1px solid #cbd5e1; display: block; padding-bottom: 2px; margin-bottom: 4px;">Runtime Analysis</strong>
+<ul style="margin: 0; padding-left: 12px; list-style-type: square; color: #475569;">
+<li><strong>Heap Growth Over Time:</strong> Heap increases across repeated flows and does not return toward baseline <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Configurable growth %)</span></li>
+<li><strong>Widget/Object Retention:</strong> Objects remain retained after route/widget disposal <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Retained after disposal)</span></li>
+<li><strong>Frame Rendering/Jank:</strong> Frame build/raster time exceeds threshold or dropped frames detected <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: frame_time > 16.67ms)</span></li>
+<li><strong>Excessive Widget Rebuilds:</strong> Widget rebuild count significantly exceeds expected baseline <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Configurable multiplier)</span></li>
+<li><strong>Slow Startup:</strong> Cold-start time exceeds configured threshold <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: startup_ms > 3000)</span></li>
+<li><strong>Slow API Request:</strong> API request exceeds latency threshold <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: latency_ms > 2000)</span></li>
+<li><strong>Excessive Network Traffic:</strong> Unexpected request frequency or payload volume <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Configurable request/payload threshold)</span></li>
+<li><strong>Unhandled Exception:</strong> Unhandled Dart/Flutter exception during test flow <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: unhandled_exception == true)</span></li>
+<li><strong>Resource Retained After Screen Exit:</strong> Subscription/timer remains active after navigation away <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Active resource after dispose)</span></li>
+<li><strong>Sensitive Runtime Storage:</strong> Token/payment/PII written to logs or insecure storage <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Sensitive data detected)</span></li>
+</ul>
+</div>
+<div style="width: 48%; min-width: 250px; background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; box-sizing: border-box;">
+<strong style="color: #0f172a; border-bottom: 1px solid #cbd5e1; display: block; padding-bottom: 2px; margin-bottom: 4px;">Dependencies</strong>
+<ul style="margin: 0; padding-left: 12px; list-style-type: square; color: #475569;">
+<li><strong>Vulnerable Package Version:</strong> Direct/transitive dependency has known security advisory <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Known CVE/advisory)</span></li>
+<li><strong>Unused Dependency:</strong> Declared package has no project references <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: reference_count == 0)</span></li>
+<li><strong>Unmaintained Package:</strong> Package has stale releases or weak maintenance signals <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Configurable inactivity period)</span></li>
+</ul>
+</div>
+<div style="width: 48%; min-width: 250px; background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; box-sizing: border-box;">
+<strong style="color: #0f172a; border-bottom: 1px solid #cbd5e1; display: block; padding-bottom: 2px; margin-bottom: 4px;">Architecture</strong>
+<ul style="margin: 0; padding-left: 12px; list-style-type: square; color: #475569;">
+<li><strong>Layer Violation:</strong> UI directly accesses infrastructure/data layer against selected architecture <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Forbidden dependency)</span></li>
+<li><strong>Mixed State Management:</strong> Conflicting state-management patterns used across modules <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Configured allowed patterns)</span></li>
+<li><strong>Business Logic Inside Widget:</strong> Networking/business rules embedded in build/UI classes <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Configurable complexity/API count)</span></li>
+</ul>
+</div>
+<div style="width: 48%; min-width: 250px; background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; box-sizing: border-box;">
+<strong style="color: #0f172a; border-bottom: 1px solid #cbd5e1; display: block; padding-bottom: 2px; margin-bottom: 4px;">Reporting</strong>
+<ul style="margin: 0; padding-left: 12px; list-style-type: square; color: #475569;">
+<li><strong>File/Line/Code Evidence:</strong> Every finding must include exact source location and evidence snippet <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Required fields)</span></li>
+<li><strong>Severity/Confidence Scoring:</strong> Every finding receives severity and confidence <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Required fields)</span></li>
+<li><strong>Suppression/Ignore Support:</strong> Approved findings can be suppressed with a reason <span style="color: #2563eb; font-size: 9px; font-weight: 500;">(Threshold: Suppression requires reason)</span></li>
+</ul>
+</div>
+<div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px;">
+<strong style="color: #0f172a; border-bottom: 1px solid #cbd5e1; display: block; padding-bottom: 2px; margin-bottom: 4px;">Local Threshold Parameters</strong>
+<ul style="margin: 0; padding-left: 12px; list-style-type: square; color: #475569;">
+<li><strong>Max Lines of Code:</strong> 500</li>
+<li><strong>Max Function Lines:</strong> 50</li>
+<li><strong>Allow TODO:</strong> false</li>
+<li><strong>Enforce class prefixes:</strong> true</li>
+</ul>
+</div>
+</div>
+
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        function downloadPdf() {
+            try {
+                if (typeof html2pdf !== 'undefined') {
+                    const element = document.getElementById('report-content');
+                    const opt = {
+                        margin:       [10, 10, 10, 10],
+                        filename:     'security-report-TestApp.pdf',
+                        image:        { type: 'jpeg', quality: 0.98 },
+                        html2canvas:  { scale: 2, useCORS: true, logging: false },
+                        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    };
+                    html2pdf().from(element).set(opt).save().catch(function() {
+                        window.print();
+                    });
+                } else {
+                    window.print();
+                }
+            } catch (_) {
+                window.print();
+            }
+        }
+
+        // Email Sending Functions
+        function openEmailModal() {
+            document.getElementById('emailModal').style.display = 'flex';
+            document.getElementById('emailFeedback').style.display = 'none';
+        }
+
+        function closeEmailModal() {
+            document.getElementById('emailModal').style.display = 'none';
+        }
+
+        async function sendEmailReport() {
+            const to = document.getElementById('emailTo').value.trim();
+            const subject = document.getElementById('emailSubject').value.trim();
+            const body = document.getElementById('emailBody').value.trim();
+            const feedback = document.getElementById('emailFeedback');
+            const btn = document.getElementById('btnSendEmail');
+            
+            if (!to) {
+                feedback.style.display = 'block';
+                feedback.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                feedback.style.border = '1px solid #ef4444';
+                feedback.style.color = '#b91c1c';
+                feedback.innerText = 'Please enter a valid recipient email address.';
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerText = 'Compiling PDF...';
+            feedback.style.display = 'block';
+            feedback.style.backgroundColor = 'rgba(37, 99, 235, 0.1)';
+            feedback.style.border = '1px solid #2563eb';
+            feedback.style.color = '#1d4ed8';
+            feedback.innerText = 'Generating PDF report in browser...';
+            
+            try {
+                const element = document.getElementById('report-content');
+                
+                const opt = {
+                    margin:       [15, 15, 15, 15],
+                    filename:     'security-report-TestApp.pdf',
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2, useCORS: true, logging: false },
+                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+                
+                // Hide modal temporarily for PDF capture
+                document.getElementById('emailModal').style.display = 'none';
+                
+                html2pdf().from(element).set(opt).output('datauristring').then(async function(pdfDataUri) {
+                    // Show modal again
+                    document.getElementById('emailModal').style.display = 'flex';
+                    
+                    btn.innerText = 'Sending email...';
+                    feedback.innerText = 'Sending email payload to server...';
+                    
+                    const pdfBase64 = pdfDataUri.split(',')[1];
+                    const payload = {
+                        to: to,
+                        subject: subject,
+                        body: body,
+                        pdfBase64: pdfBase64,
+                        filename: 'security-report-TestApp.pdf'
+                    };
+                    
+                    // Auto-port discovery for Shelf server
+                    const ports = [8080, 8089, 8081, 9000];
+                    let success = false;
+                    let resMsg = '';
+                    
+                    for (const port of ports) {
+                        try {
+                            const response = await fetch(`http://localhost:${port}/api/send-email`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload)
+                            });
+                            if (response.ok) {
+                                const resData = await response.json();
+                                success = true;
+                                resMsg = resData.message || 'Email successfully sent.';
+                                break;
+                            }
+                        } catch (_) {
+                            // Try next port
+                        }
+                    }
+                    
+                    btn.disabled = false;
+                    btn.innerText = 'Send Report';
+                    
+                    if (success) {
+                        feedback.style.backgroundColor = 'rgba(22, 163, 74, 0.1)';
+                        feedback.style.border = '1px solid #16a34a';
+                        feedback.style.color = '#15803d';
+                        feedback.innerText = resMsg;
+                        setTimeout(closeEmailModal, 3000);
+                    } else {
+                        feedback.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                        feedback.style.border = '1px solid #ef4444';
+                        feedback.style.color = '#b91c1c';
+                        feedback.innerText = 'Failed to connect to local MCP Performance server. Please ensure the server is running.';
+                    }
+                }).catch(function(err) {
+                    document.getElementById('emailModal').style.display = 'flex';
+                    btn.disabled = false;
+                    btn.innerText = 'Send Report';
+                    feedback.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                    feedback.style.border = '1px solid #ef4444';
+                    feedback.style.color = '#b91c1c';
+                    feedback.innerText = 'Error compiling PDF: ' + err.toString();
+                });
+            } catch (e) {
+                document.getElementById('emailModal').style.display = 'flex';
+                btn.disabled = false;
+                btn.innerText = 'Send Report';
+                feedback.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                feedback.style.border = '1px solid #ef4444';
+                feedback.style.color = '#b91c1c';
+                feedback.innerText = 'Error: ' + e.toString();
+            }
+        }
+    </script>
+
+    <!-- Email Modal HTML -->
+    <div id="emailModal" class="modal">
+        <div class="modal-content">
+            <span onclick="closeEmailModal()" class="modal-close">&times;</span>
+            <h2 style="font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">Send Audit Report</h2>
+            
+            <div class="form-group">
+                <label>To (Recipient Email)</label>
+                <input type="email" id="emailTo" class="form-control" placeholder="developer/client email address..." required>
+            </div>
+            
+            <div class="form-group">
+                <label>Subject</label>
+                <input type="text" id="emailSubject" class="form-control" value="Audit Report: TestApp" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Message Summary</label>
+                <textarea id="emailBody" class="form-control" rows="8" style="font-family: sans-serif; resize: vertical;">Hello,
+
+Please find attached the security and code quality audit report for the project "TestApp".
+
+Audit Summary:
+- Security Score: 75/100
+- Total Findings: 1
+- Detected Architecture: Clean
+- Detected State Management: Bloc
+
+All review criteria are added in the sheet. Please check and review the attached PDF report.
+
+Best regards,
+Flutter Architect MCP Analyzer</textarea>
+            </div>
+            
+            <div id="emailFeedback" style="padding: 10px; border-radius: 8px; font-size: 12px; margin-bottom: 16px; display: none;"></div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button onclick="closeEmailModal()" style="padding: 8px 16px; border-radius: 8px; border: 1px solid #cbd5e1; background-color: transparent; color: #475569; font-size: 13px; cursor: pointer; font-weight: 600;">Cancel</button>
+                <button onclick="sendEmailReport()" id="btnSendEmail" style="padding: 8px 20px; border-radius: 8px; border: none; background-color: #2563eb; color: #ffffff; font-weight: bold; font-size: 13px; cursor: pointer; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);">Send Report</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

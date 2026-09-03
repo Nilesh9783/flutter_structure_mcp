@@ -6,6 +6,7 @@ import 'package:flutter_architect_mcp/technologies/flutter/security/security_eng
 import 'package:flutter_architect_mcp/technologies/flutter/analyzer/project_detector.dart';
 import 'package:flutter_architect_mcp/services/criteria_service.dart';
 import 'package:flutter_architect_mcp/core/constants/report_constants.dart';
+import 'package:flutter_architect_mcp/utils/solution_generator.dart';
 
 class ReportGenerator {
   final String projectPath;
@@ -15,10 +16,10 @@ class ReportGenerator {
 
   ReportGenerator({
     required this.projectPath,
-    required this.findings,
+    required List<Finding> findings,
     required this.metadata,
     this.technologyId = 'flutter',
-  });
+  }) : findings = findings.map((f) => SolutionGenerator.attachSolutionAndPrompt(f)).toList();
 
   String get technologyName {
     switch (technologyId.toLowerCase()) {
@@ -57,6 +58,7 @@ class ReportGenerator {
         'lowCount': scoreDetails.lowCount,
         'explanation': scoreDetails.explanation,
       },
+      'masterClaudePrompt': SolutionGenerator.generateMasterClaudePrompt(findings),
       'findings': findings.map((Finding f) => f.toJson()).toList(),
     };
     await jsonReportFile.writeAsString(const JsonEncoder.withIndent('  ').convert(jsonMap));
@@ -116,19 +118,33 @@ class ReportGenerator {
 
     buffer.writeln(_generateMarkdownCriteriaSection());
 
-    buffer.writeln('\n## Findings List');
+    if (findings.isNotEmpty) {
+      buffer.writeln('\n## 🤖 Master Fix Command for Claude (Fix All Issues)');
+      buffer.writeln('Pass this master instruction to Claude to fix all issues in one operation preserving functionality:');
+      buffer.writeln('```markdown');
+      buffer.writeln(SolutionGenerator.generateMasterClaudePrompt(findings));
+      buffer.writeln('```\n');
+    }
+
+    buffer.writeln('\n## Detailed Findings List');
     if (findings.isEmpty) {
       buffer.writeln('_No findings detected! Your project passes all architectural, performance, and security checks._');
     } else {
       for (final f in findings) {
         buffer.writeln('\n### [${f.category}] [${f.severity}] ${f.title}');
-        buffer.writeln('- **File:** ${f.file}:${f.line}');
+        buffer.writeln('- **File:** `${f.file}` (Line ${f.line})');
         buffer.writeln('- **Confidence:** ${f.confidence}');
         buffer.writeln('- **Evidence:** `${f.evidence}`');
         buffer.writeln('- **Description:** ${f.description}');
         buffer.writeln('- **Risk:** ${f.risk}');
         buffer.writeln('- **Recommendation:** ${f.recommendation}');
-        buffer.writeln('- **Fix Available:** ${f.fixAvailable ? "Yes" : "No"}');
+        if (f.suggestedFix.isNotEmpty) {
+          buffer.writeln('- **Tailored Code Solution:**\n```\n${f.suggestedFix}\n```');
+        }
+        if (f.claudePrompt.isNotEmpty) {
+          buffer.writeln('- **Claude AI Fix Prompt:**\n```\n${f.claudePrompt}\n```');
+        }
+        buffer.writeln('- **Auto-Fix Available:** ${f.fixAvailable ? "Yes" : "No"}');
         buffer.writeln('---');
       }
     }
@@ -142,18 +158,18 @@ class ReportGenerator {
       buffer.write('''
             <div class="meta-card">
                 <div class="meta-label">Flutter SDK</div>
-                <div class="meta-value">\${metadata.flutterVersion}</div>
+                <div class="meta-value">${metadata.flutterVersion}</div>
             </div>
             <div class="meta-card">
                 <div class="meta-label">Dart Environment</div>
-                <div class="meta-value">\${metadata.dartVersion}</div>
+                <div class="meta-value">${metadata.dartVersion}</div>
             </div>
       ''');
     } else {
       buffer.write('''
             <div class="meta-card">
                 <div class="meta-label">Runtime Environment</div>
-                <div class="meta-value">\${metadata.dartVersion}</div>
+                <div class="meta-value">${metadata.dartVersion}</div>
             </div>
       ''');
     }
@@ -162,7 +178,7 @@ class ReportGenerator {
       buffer.write('''
             <div class="meta-card">
                 <div class="meta-label">State Management</div>
-                <div class="meta-value">\${metadata.detectedStateManagement}</div>
+                <div class="meta-value">${metadata.detectedStateManagement}</div>
             </div>
       ''');
     }
@@ -170,11 +186,11 @@ class ReportGenerator {
     buffer.write('''
             <div class="meta-card">
                 <div class="meta-label">Router</div>
-                <div class="meta-value">\${metadata.detectedRouter}</div>
+                <div class="meta-value">${metadata.detectedRouter}</div>
             </div>
             <div class="meta-card">
                 <div class="meta-label">Network & Database</div>
-                <div class="meta-value">\${metadata.detectedNetwork} / \${metadata.detectedDatabase}</div>
+                <div class="meta-value">${metadata.detectedNetwork} / ${metadata.detectedDatabase}</div>
             </div>
     ''');
     return buffer.toString();
@@ -526,34 +542,96 @@ class ReportGenerator {
         }
         .form-group {
             margin-bottom: 1.25rem;
+        .solution-box {
+            background: rgba(34, 197, 94, 0.08);
+            border: 1px solid rgba(34, 197, 94, 0.25);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 0.75rem;
         }
-        .form-group label {
-            display: block; 
-            font-size: 0.8rem; 
-            color: var(--text-muted); 
-            margin-bottom: 0.35rem;
-            font-weight: 600;
+        .solution-title {
+            font-size: 0.8rem;
             text-transform: uppercase;
+            color: #4ade80;
+            font-weight: 700;
+            margin-bottom: 0.35rem;
         }
-        .form-control {
-            width: 100%; 
-            padding: 0.75rem; 
-            border-radius: 8px; 
-            border: 1px solid var(--border); 
-            background-color: var(--bg-color); 
-            color: var(--text-color); 
+        .prompt-box {
+            background: rgba(129, 140, 248, 0.08);
+            border: 1px solid rgba(129, 140, 248, 0.25);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 0.75rem;
+        }
+        .prompt-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: #818cf8;
+            font-weight: 700;
+            margin-bottom: 0.35rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .copy-btn {
+            background: #1e293b;
+            border: 1px solid var(--border);
+            color: var(--text-color);
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .copy-btn:hover {
+            background: var(--primary);
+            color: #0b0f19;
+        }
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #22c55e;
+            color: #0b0f19;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            font-weight: bold;
             font-size: 0.9rem;
-            outline: none;
-            transition: border-color 0.2s;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            z-index: 100000;
+            display: none;
+            animation: toastFadeIn 0.3s ease-out;
         }
-        .form-control:focus {
-            border-color: var(--primary);
+        @keyframes toastFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
+    <div id="toast" class="toast">📋 Copied to clipboard!</div>
+
     <div class="container">
+        <!-- Top File Role & Navigation Demarcation Banner -->
+        <div style="background: linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0%, rgba(129, 140, 248, 0.12) 100%); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                    <span style="background: #38bdf8; color: #0b0f19; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 4px; text-transform: uppercase;">File 1 of 2</span>
+                    <span style="font-weight: 700; color: #38bdf8; font-size: 1rem;">📊 Interactive Audit Dashboard (security-report.html)</span>
+                </div>
+                <p style="font-size: 0.825rem; color: var(--text-muted); line-height: 1.4;">
+                    <strong>What this file includes:</strong> Live interactive severity/category filters, detailed vulnerability &amp; memory leak cards, 1-click Claude fix prompt copy buttons, and Master &quot;Fix All with AI&quot; prompt modal.
+                </p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <a href="security-report-pdf.html" style="display: inline-flex; align-items: center; gap: 0.35rem; background: #1e293b; border: 1px solid var(--border); color: #cbd5e1; text-decoration: none; font-size: 0.8rem; font-weight: 600; padding: 0.5rem 1rem; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                    📄 Open Print-Ready Document View (security-report-pdf.html) &rarr;
+                </a>
+            </div>
+        </div>
+
         <header>
             <div>
                 <h1>${technologyName} Advanced Engineering Audit</h1>
@@ -562,8 +640,10 @@ class ReportGenerator {
             <div style="text-align: right;">
                 <p style="font-weight: bold;">Date: ${DateTime.now().toLocal().toString().split('.')[0]}</p>
                 <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.5rem;">Project Name: ${metadata.projectName}</p>
-                <div style="display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center;">
-                    <a href="security-report-pdf.html" style="display: inline-block; background-color: var(--primary); color: #0b0f19; font-weight: 600; text-decoration: none; font-size: 0.8rem; padding: 0.45rem 1rem; border-radius: 6px; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">PDF Download View</a>
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+                    <button onclick="openMasterPromptModal()" style="display: inline-block; background: linear-gradient(135deg, #818cf8 0%, #38bdf8 100%); color: #0b0f19; font-weight: bold; font-size: 0.8rem; padding: 0.45rem 1rem; border-radius: 6px; border: none; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">🤖 Fix All with Claude</button>
+                    <button onclick="window.print()" style="display: inline-block; background-color: var(--primary); color: #0b0f19; font-weight: 700; border: none; font-size: 0.8rem; padding: 0.45rem 1rem; border-radius: 6px; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">🖨️ Download / Print PDF</button>
+                    <a href="security-report-pdf.html" style="display: inline-block; background: #1e293b; border: 1px solid var(--border); color: #cbd5e1; font-weight: 600; text-decoration: none; font-size: 0.8rem; padding: 0.45rem 1rem; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">📄 Print-Ready View</a>
                     <button onclick="openEmailModal()" style="display: inline-block; background-color: #22c55e; color: #0b0f19; font-weight: 600; text-decoration: none; font-size: 0.8rem; padding: 0.45rem 1rem; border-radius: 6px; border: none; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Send via Email</button>
                 </div>
             </div>
@@ -577,7 +657,10 @@ class ReportGenerator {
 
         <div style="margin-bottom: 2rem; background: rgba(56, 189, 248, 0.05); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
             <span>📋 <strong style="color: var(--primary); cursor: pointer;" onclick="openEmailModal()">${ReportConstants.criteriaMessage}</strong></span>
-            <button onclick="openEmailModal()" style="background: none; border: none; color: var(--primary); font-weight: bold; cursor: pointer; text-decoration: underline;">Review & Send</button>
+            <div style="display: flex; gap: 0.75rem;">
+                <button onclick="openMasterPromptModal()" style="background: none; border: none; color: #818cf8; font-weight: bold; cursor: pointer; text-decoration: underline;">🤖 Fix All Issues with AI</button>
+                <button onclick="openEmailModal()" style="background: none; border: none; color: var(--primary); font-weight: bold; cursor: pointer; text-decoration: underline;">Review & Send</button>
+            </div>
         </div>
 
         <section class="dashboard">
@@ -614,8 +697,9 @@ class ReportGenerator {
         </section>
 
         <section style="margin-bottom: 2rem;">
-            <h3 style="font-size: 1.25rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+            <h3 style="font-size: 1.25rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between;">
                 <span>Detailed Findings</span>
+                <button onclick="openMasterPromptModal()" class="copy-btn" style="background: rgba(129, 140, 248, 0.2); color: #818cf8; border-color: rgba(129, 140, 248, 0.4);">📋 Copy Master Prompt for All Issues</button>
             </h3>
             
             <div class="filters">
@@ -646,6 +730,108 @@ class ReportGenerator {
         let currentSeverity = 'ALL';
         let currentCategory = 'ALL';
 
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+            toast.innerText = msg || '📋 Copied to clipboard!';
+            toast.style.display = 'block';
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => {
+                toast.style.display = 'none';
+            }, 2500);
+        }
+
+        function triggerButtonSuccess(btn) {
+            if (!btn) return;
+            const origHtml = btn.innerHTML;
+            btn.innerHTML = '✅ Copied!';
+            btn.style.background = '#22c55e';
+            btn.style.color = '#0b0f19';
+            btn.style.borderColor = '#22c55e';
+            btn.disabled = true;
+            setTimeout(() => {
+                btn.innerHTML = origHtml;
+                btn.style.background = '';
+                btn.style.color = '';
+                btn.style.borderColor = '';
+                btn.disabled = false;
+            }, 2000);
+        }
+
+        function copyText(text, btn) {
+            if (!text || text.trim().length === 0) {
+                showToast('⚠️ Nothing to copy');
+                return;
+            }
+
+            let copied = false;
+
+            // 1. Synchronous textarea copy inside the user gesture event loop
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.top = '10px';
+                ta.style.left = '10px';
+                ta.style.width = '100px';
+                ta.style.height = '40px';
+                ta.style.opacity = '0.01';
+                ta.style.zIndex = '999999';
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                ta.setSelectionRange(0, 999999);
+                copied = document.execCommand('copy');
+                document.body.removeChild(ta);
+            } catch (e) {
+                copied = false;
+            }
+
+            // 2. Also attempt modern clipboard API if supported
+            if (!copied && navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('📋 Prompt copied to clipboard!');
+                    if (btn) triggerButtonSuccess(btn);
+                }).catch(() => {
+                    showToast('⚠️ Please select text and copy manually.');
+                });
+                return;
+            }
+
+            if (copied) {
+                showToast('📋 Prompt copied to clipboard!');
+                if (btn) triggerButtonSuccess(btn);
+            } else {
+                showToast('⚠️ Please select text and copy manually.');
+            }
+        }
+
+        function copyFindingPrompt(index, btn) {
+            if (findings && findings[index] && findings[index].claudePrompt) {
+                copyText(findings[index].claudePrompt, btn);
+            } else {
+                const codeEl = document.getElementById('prompt_code_' + index);
+                if (codeEl) {
+                    copyText(codeEl.innerText, btn);
+                }
+            }
+        }
+
+        function openMasterPromptModal() {
+            document.getElementById('masterPromptModal').style.display = 'flex';
+        }
+
+        function closeMasterPromptModal() {
+            document.getElementById('masterPromptModal').style.display = 'none';
+        }
+
+        function copyMasterPrompt(btn) {
+            const el = document.getElementById('masterPromptText');
+            if (el) {
+                copyText(el.value, btn);
+            }
+        }
+
         function renderFindings() {
             const container = document.getElementById('findingsContainer');
             container.innerHTML = '';
@@ -666,9 +852,33 @@ class ReportGenerator {
                 return;
             }
 
-            filtered.forEach(f => {
+            filtered.forEach((f, idx) => {
                 const item = document.createElement('div');
                 item.className = 'finding-item ' + f.severity.toLowerCase();
+
+                let solutionHtml = '';
+                if (f.suggestedFix && f.suggestedFix.trim().length > 0) {
+                    solutionHtml = `
+                        <div class="solution-box">
+                            <div class="solution-title">💡 Tailored Code Solution</div>
+                            <pre style="color: #4ade80;"><code>` + escapeHtml(f.suggestedFix) + `</code></pre>
+                        </div>
+                    `;
+                }
+
+                let promptHtml = '';
+                if (f.claudePrompt && f.claudePrompt.trim().length > 0) {
+                    const originalIdx = findings.indexOf(f);
+                    promptHtml = `
+                        <div class="prompt-box">
+                            <div class="prompt-title">
+                                <span>🤖 Claude AI Fix Prompt</span>
+                                <button class="copy-btn" onclick="copyFindingPrompt(` + originalIdx + `, this)">📋 Copy Prompt</button>
+                            </div>
+                            <pre style="color: #cbd5e1; max-height: 180px; overflow-y: auto;"><code id="prompt_code_` + originalIdx + `">` + escapeHtml(f.claudePrompt) + `</code></pre>
+                        </div>
+                    `;
+                }
 
                 item.innerHTML = `
                     <div class="finding-header">
@@ -681,7 +891,7 @@ class ReportGenerator {
                     </div>
 
                     <div class="finding-meta">
-                        <span><strong>File:</strong> ` + f.file + `:` + f.line + `</span>
+                        <span><strong>File:</strong> ` + f.file + ` (Line ` + f.line + `)</span>
                         <span><strong>Confidence:</strong> ` + f.confidence + `</span>
                         ` + (f.fixAvailable ? '<span style="color: var(--low); font-weight: bold;">(Auto-Fix Available)</span>' : '') + `
                     </div>
@@ -705,12 +915,16 @@ class ReportGenerator {
                         <div class="section-title">Recommendation</div>
                         <p style="font-size: 0.95rem; margin-top: 0.25rem; white-space: pre-line;">` + f.recommendation + `</p>
                     </div>
+
+                    ` + solutionHtml + `
+                    ` + promptHtml + `
                 `;
                 container.appendChild(item);
             });
         }
 
         function escapeHtml(str) {
+            if (!str) return '';
             return str
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
@@ -735,12 +949,10 @@ class ReportGenerator {
             const buttons = document.querySelectorAll('.' + btnClass);
             buttons.forEach(btn => {
                 const text = btn.innerText.toUpperCase();
-                // Match text with filter names
                 const matches = text.includes(activeVal) || (activeVal === 'ALL' && text.includes('ALL'));
                 if (matches) {
                     btn.classList.add('active');
                 } else {
-                    // Check if it is the other values in valuesList
                     const isOther = valuesList.some(v => v !== activeVal && text.includes(v));
                     if (isOther) {
                         btn.classList.remove('active');
@@ -784,10 +996,7 @@ class ReportGenerator {
             feedback.innerText = 'Generating PDF report in browser...';
             
             try {
-                // Compile PDF using html2pdf
                 const element = document.querySelector('.container');
-                
-                // Exclude elements from PDF (modals, action buttons)
                 const opt = {
                     margin: 10,
                     filename: 'security-report.pdf',
@@ -796,13 +1005,11 @@ class ReportGenerator {
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
                 
-                // Hide modal temporarily for PDF capture
                 document.getElementById('emailModal').style.display = 'none';
+                document.getElementById('masterPromptModal').style.display = 'none';
                 
                 html2pdf().from(element).set(opt).output('datauristring').then(async function(pdfDataUri) {
-                    // Show modal again
                     document.getElementById('emailModal').style.display = 'flex';
-                    
                     btn.innerText = 'Sending email...';
                     feedback.innerText = 'Sending email payload to server...';
                     
@@ -815,7 +1022,6 @@ class ReportGenerator {
                         filename: 'security-report.pdf'
                     };
                     
-                    // Auto-port discovery for Shelf server
                     const ports = [8080, 8089, 8081, 9000];
                     let success = false;
                     let resMsg = '';
@@ -833,9 +1039,7 @@ class ReportGenerator {
                                 resMsg = resData.message || 'Email successfully sent.';
                                 break;
                             }
-                        } catch (_) {
-                            // Suppress and try next port
-                        }
+                        } catch (_) {}
                     }
                     
                     btn.disabled = false;
@@ -876,6 +1080,24 @@ class ReportGenerator {
         // Initial load
         renderFindings();
     </script>
+
+    <!-- Master Claude Prompt Modal HTML -->
+    <div id="masterPromptModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <span onclick="closeMasterPromptModal()" class="modal-close">&times;</span>
+            <h2 style="font-size: 1.25rem; color: var(--text-color); margin-bottom: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">🤖 Master Fix Command for Claude</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Pass this instruction directly to Claude to resolve all ${findings.length} audit finding(s) preserving existing code functionality.
+            </p>
+            <div class="form-group">
+                <textarea id="masterPromptText" class="form-control" rows="14" style="font-family: 'Courier New', monospace; font-size: 0.8rem; resize: vertical;" readonly>${SolutionGenerator.generateMasterClaudePrompt(findings).replaceAll('<', '&lt;').replaceAll('>', '&gt;')}</textarea>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button onclick="closeMasterPromptModal()" class="copy-btn" style="padding: 0.55rem 1.25rem;">Close</button>
+                <button onclick="copyMasterPrompt(this)" style="padding: 0.55rem 1.5rem; border-radius: 8px; border: none; background: linear-gradient(135deg, #818cf8 0%, #38bdf8 100%); color: #0b0f19; font-weight: bold; font-size: 0.85rem; cursor: pointer;">📋 Copy Master Prompt</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Email Modal HTML -->
     <div id="emailModal" class="modal">
@@ -1420,16 +1642,21 @@ Flutter Architect MCP Analyzer</textarea>
     </style>
 </head>
 <body>
-    <div class="action-bar">
+    <div class="action-bar" style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.85rem 1.25rem; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
         <div>
-            <span style="font-weight: 700; font-size: 14px; color: #334155;">PDF Download View</span>
-            <span style="font-size: 12px; color: #64748b; margin-left: 8px;">Formatted for PDF export & printing</span>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;">
+                <span style="background: #0f172a; color: white; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 4px; text-transform: uppercase;">File 2 of 2</span>
+                <span style="font-weight: 700; color: #0f172a; font-size: 1rem;">📄 Print-Ready Audit Document (security-report-pdf.html)</span>
+            </div>
+            <p style="font-size: 0.8rem; color: #64748b; margin: 0; line-height: 1.4;">
+                <strong>What this file includes:</strong> Formatted A4 layout with Executive Summary tables, scoring deduction breakdown, 3-Phase Remediation Action Plan, and Master Claude Batch Fix Prompt.
+            </p>
         </div>
-        <div style="display: flex; gap: 8px;">
-            <a class="btn btn-secondary" href="security-report.html">Go to Interactive View</a>
-            <button class="btn btn-secondary" onclick="window.print()">Print Report</button>
-            <button class="btn btn-secondary" style="background-color: #22c55e; color: #0b0f19; border: none;" onclick="openEmailModal()">Send via Email</button>
-            <button class="btn class-primary btn-primary" onclick="downloadPdf()">Download PDF</button>
+        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <a class="btn btn-secondary" href="security-report.html" style="font-weight: 600;">📊 Interactive Dashboard</a>
+            <button class="btn btn-primary" onclick="window.print()" style="font-weight: 700;">🖨️ Save as PDF / Print</button>
+            <button class="btn btn-secondary" onclick="downloadPdf()">📥 Direct PDF Download</button>
+            <button class="btn btn-secondary" style="background-color: #22c55e; color: #0b0f19; border: none; font-weight: 600;" onclick="openEmailModal()">Send Email</button>
         </div>
     </div>
 
@@ -1633,25 +1860,39 @@ Flutter Architect MCP Analyzer</textarea>
             </div>
         </div>
 
+        <div class="action-plan-section">
+            <h2>8. Master Claude AI Fix Command (Automated Batch Fix)</h2>
+            <p style="font-size: 11px; color: #64748b; margin-top: -6px; margin-bottom: 12px;">Pass the prompt below to Claude to automatically apply non-breaking fixes for all identified findings:</p>
+            <div class="code-box">
+                <pre><code>${SolutionGenerator.generateMasterClaudePrompt(findings).replaceAll('<', '&lt;').replaceAll('>', '&gt;')}</code></pre>
+            </div>
+        </div>
+
         ${_generatePdfCriteriaSection()}
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script>
         function downloadPdf() {
-            const element = document.getElementById('report-content');
-            
-            // Set options for high-quality export
-            const opt = {
-                margin:       [15, 15, 15, 15],
-                filename:     'security-report-${metadata.projectName}.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true, logging: false },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
-            // Generate the PDF
-            html2pdf().from(element).set(opt).save();
+            try {
+                if (typeof html2pdf !== 'undefined') {
+                    const element = document.getElementById('report-content');
+                    const opt = {
+                        margin:       [10, 10, 10, 10],
+                        filename:     'security-report-${metadata.projectName}.pdf',
+                        image:        { type: 'jpeg', quality: 0.98 },
+                        html2canvas:  { scale: 2, useCORS: true, logging: false },
+                        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    };
+                    html2pdf().from(element).set(opt).save().catch(function() {
+                        window.print();
+                    });
+                } else {
+                    window.print();
+                }
+            } catch (_) {
+                window.print();
+            }
         }
 
         // Email Sending Functions

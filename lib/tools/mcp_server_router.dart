@@ -26,6 +26,7 @@ import 'package:flutter_architect_mcp/services/email_service.dart';
 import 'package:flutter_architect_mcp/core/constants/report_constants.dart';
 import 'package:flutter_architect_mcp/technologies/analyzer_hub.dart';
 import 'package:flutter_architect_mcp/technologies/base_analyzer.dart';
+import 'package:flutter_architect_mcp/utils/solution_generator.dart';
 
 base class McpServerRouter extends MCPServer with ToolsSupport {
   McpServerRouter(super.channel)
@@ -589,6 +590,7 @@ base class McpServerRouter extends MCPServer with ToolsSupport {
         'metadata': rawMeta.toJson(),
         'score': score.finalScore,
         'explanation': score.explanation,
+        'masterClaudePrompt': SolutionGenerator.generateMasterClaudePrompt(enrichedFindings),
         'findings': enrichedFindings.map((Finding f) => f.toJson()).toList(),
         'htmlReportPath': reportHtmlPath,
         'pdfHtmlReportPath': reportPdfHtmlPath,
@@ -816,15 +818,21 @@ base class McpServerRouter extends MCPServer with ToolsSupport {
       final criteriaMsg = await _getCriteriaMessage();
       final meta = ProjectDetector.detectMetadata(projectPath);
       final engine = SecurityEngine();
-      final findings = await engine.runAllScans(
+      final rawFindings = await engine.runAllScans(
         Directory(projectPath),
         hasFirebase: meta.hasFirebase,
       );
-      final score = SecurityEngine.calculateScore(findings);
-      final resultText =
-          'Security Score: ${score.finalScore}/100\n\nFindings: ${jsonEncode(findings.map((Finding f) => f.toJson()).toList())}';
+      final rag = RagService();
+      final enrichedFindings = rag.enrichFindings(rawFindings);
+      final score = SecurityEngine.calculateScore(enrichedFindings);
+      final result = {
+        'score': score.finalScore,
+        'explanation': score.explanation,
+        'masterClaudePrompt': SolutionGenerator.generateMasterClaudePrompt(enrichedFindings),
+        'findings': enrichedFindings.map((Finding f) => f.toJson()).toList(),
+      };
       return CallToolResult(
-        content: [Content.text(text: '$criteriaMsg\n\n$resultText')],
+        content: [Content.text(text: '$criteriaMsg\n\n${jsonEncode(result)}')],
       );
     } catch (e) {
       return CallToolResult(
@@ -847,10 +855,15 @@ base class McpServerRouter extends MCPServer with ToolsSupport {
     try {
       final criteriaMsg = await _getCriteriaMessage();
       final scanner = SecretScanner();
-      final findings = await scanner.scan(Directory(projectPath));
-      final resultText = jsonEncode(findings.map((f) => f.toJson()).toList());
+      final rawFindings = await scanner.scan(Directory(projectPath));
+      final rag = RagService();
+      final enrichedFindings = rag.enrichFindings(rawFindings);
+      final result = {
+        'masterClaudePrompt': SolutionGenerator.generateMasterClaudePrompt(enrichedFindings),
+        'findings': enrichedFindings.map((f) => f.toJson()).toList(),
+      };
       return CallToolResult(
-        content: [Content.text(text: '$criteriaMsg\n\n$resultText')],
+        content: [Content.text(text: '$criteriaMsg\n\n${jsonEncode(result)}')],
       );
     } catch (e) {
       return CallToolResult(
@@ -873,10 +886,15 @@ base class McpServerRouter extends MCPServer with ToolsSupport {
     try {
       final criteriaMsg = await _getCriteriaMessage();
       final scanner = DependencyScanner();
-      final findings = await scanner.scan(Directory(projectPath));
-      final resultText = jsonEncode(findings.map((f) => f.toJson()).toList());
+      final rawFindings = await scanner.scan(Directory(projectPath));
+      final rag = RagService();
+      final enrichedFindings = rag.enrichFindings(rawFindings);
+      final result = {
+        'masterClaudePrompt': SolutionGenerator.generateMasterClaudePrompt(enrichedFindings),
+        'findings': enrichedFindings.map((f) => f.toJson()).toList(),
+      };
       return CallToolResult(
-        content: [Content.text(text: '$criteriaMsg\n\n$resultText')],
+        content: [Content.text(text: '$criteriaMsg\n\n${jsonEncode(result)}')],
       );
     } catch (e) {
       return CallToolResult(
@@ -899,10 +917,15 @@ base class McpServerRouter extends MCPServer with ToolsSupport {
     try {
       final criteriaMsg = await _getCriteriaMessage();
       final scanner = MemoryEngine();
-      final findings = await scanner.scan(Directory(projectPath));
-      final resultText = jsonEncode(findings.map((f) => f.toJson()).toList());
+      final rawFindings = await scanner.scan(Directory(projectPath));
+      final rag = RagService();
+      final enrichedFindings = rag.enrichFindings(rawFindings);
+      final result = {
+        'masterClaudePrompt': SolutionGenerator.generateMasterClaudePrompt(enrichedFindings),
+        'findings': enrichedFindings.map((f) => f.toJson()).toList(),
+      };
       return CallToolResult(
-        content: [Content.text(text: '$criteriaMsg\n\n$resultText')],
+        content: [Content.text(text: '$criteriaMsg\n\n${jsonEncode(result)}')],
       );
     } catch (e) {
       return CallToolResult(
@@ -935,10 +958,15 @@ base class McpServerRouter extends MCPServer with ToolsSupport {
     try {
       final criteriaMsg = await _getCriteriaMessage();
       final scanner = PerformanceEngine();
-      final findings = await scanner.scan(Directory(projectPath));
-      final resultText = jsonEncode(findings.map((f) => f.toJson()).toList());
+      final rawFindings = await scanner.scan(Directory(projectPath));
+      final rag = RagService();
+      final enrichedFindings = rag.enrichFindings(rawFindings);
+      final result = {
+        'masterClaudePrompt': SolutionGenerator.generateMasterClaudePrompt(enrichedFindings),
+        'findings': enrichedFindings.map((f) => f.toJson()).toList(),
+      };
       return CallToolResult(
-        content: [Content.text(text: '$criteriaMsg\n\n$resultText')],
+        content: [Content.text(text: '$criteriaMsg\n\n${jsonEncode(result)}')],
       );
     } catch (e) {
       return CallToolResult(
@@ -961,10 +989,15 @@ base class McpServerRouter extends MCPServer with ToolsSupport {
     try {
       final criteriaMsg = await _getCriteriaMessage();
       final scanner = CodeQualityScanner();
-      final findings = await scanner.scan(Directory(projectPath));
-      final resultText = jsonEncode(findings.map((f) => f.toJson()).toList());
+      final rawFindings = await scanner.scan(Directory(projectPath));
+      final rag = RagService();
+      final enrichedFindings = rag.enrichFindings(rawFindings);
+      final result = {
+        'masterClaudePrompt': SolutionGenerator.generateMasterClaudePrompt(enrichedFindings),
+        'findings': enrichedFindings.map((f) => f.toJson()).toList(),
+      };
       return CallToolResult(
-        content: [Content.text(text: '$criteriaMsg\n\n$resultText')],
+        content: [Content.text(text: '$criteriaMsg\n\n${jsonEncode(result)}')],
       );
     } catch (e) {
       return CallToolResult(
@@ -987,10 +1020,15 @@ base class McpServerRouter extends MCPServer with ToolsSupport {
     try {
       final criteriaMsg = await _getCriteriaMessage();
       final scanner = AndroidScanner();
-      final findings = await scanner.scan(Directory(projectPath));
-      final resultText = jsonEncode(findings.map((f) => f.toJson()).toList());
+      final rawFindings = await scanner.scan(Directory(projectPath));
+      final rag = RagService();
+      final enrichedFindings = rag.enrichFindings(rawFindings);
+      final result = {
+        'masterClaudePrompt': SolutionGenerator.generateMasterClaudePrompt(enrichedFindings),
+        'findings': enrichedFindings.map((f) => f.toJson()).toList(),
+      };
       return CallToolResult(
-        content: [Content.text(text: '$criteriaMsg\n\n$resultText')],
+        content: [Content.text(text: '$criteriaMsg\n\n${jsonEncode(result)}')],
       );
     } catch (e) {
       return CallToolResult(
@@ -1013,10 +1051,15 @@ base class McpServerRouter extends MCPServer with ToolsSupport {
     try {
       final criteriaMsg = await _getCriteriaMessage();
       final scanner = IosScanner();
-      final findings = await scanner.scan(Directory(projectPath));
-      final resultText = jsonEncode(findings.map((f) => f.toJson()).toList());
+      final rawFindings = await scanner.scan(Directory(projectPath));
+      final rag = RagService();
+      final enrichedFindings = rag.enrichFindings(rawFindings);
+      final result = {
+        'masterClaudePrompt': SolutionGenerator.generateMasterClaudePrompt(enrichedFindings),
+        'findings': enrichedFindings.map((f) => f.toJson()).toList(),
+      };
       return CallToolResult(
-        content: [Content.text(text: '$criteriaMsg\n\n$resultText')],
+        content: [Content.text(text: '$criteriaMsg\n\n${jsonEncode(result)}')],
       );
     } catch (e) {
       return CallToolResult(
@@ -1125,6 +1168,7 @@ base class McpServerRouter extends MCPServer with ToolsSupport {
         'metadata': enrichedMeta.toJson(),
         'score': score.finalScore,
         'explanation': score.explanation,
+        'masterClaudePrompt': SolutionGenerator.generateMasterClaudePrompt(enrichedFindings),
         'findings': enrichedFindings.map((Finding f) => f.toJson()).toList(),
         'htmlReportPath': reportHtmlPath,
         'pdfHtmlReportPath': reportPdfHtmlPath,
@@ -1233,14 +1277,36 @@ base class McpServerRouter extends MCPServer with ToolsSupport {
 
     try {
       final meta = ProjectDetector.detectMetadata(projectPath);
-      final findings = <Finding>[];
-      findings.addAll(await SecurityEngine().runAllScans(Directory(projectPath), hasFirebase: meta.hasFirebase));
+      final rawFindings = <Finding>[];
+      rawFindings.addAll(await SecurityEngine().runAllScans(Directory(projectPath), hasFirebase: meta.hasFirebase));
+      rawFindings.addAll(await MemoryEngine().scan(Directory(projectPath)));
+      rawFindings.addAll(await PerformanceEngine().scan(Directory(projectPath)));
+      rawFindings.addAll(await CodeQualityScanner().scan(Directory(projectPath)));
+
+      final rag = RagService();
+      final enrichedFindings = rag.enrichFindings(rawFindings);
 
       final fixer = FixEngine(projectPath);
-      final diffs = fixer.suggestFixes(findings);
+      final diffs = fixer.suggestFixes(enrichedFindings);
+
+      final result = {
+        'masterClaudePrompt': SolutionGenerator.generateMasterClaudePrompt(enrichedFindings),
+        'autoFixDiffs': diffs.map((d) => d.toJson()).toList(),
+        'findings': enrichedFindings.map((f) => {
+          'id': f.id,
+          'title': f.title,
+          'file': f.file,
+          'line': f.line,
+          'evidence': f.evidence,
+          'suggestedFix': f.suggestedFix,
+          'claudePrompt': f.claudePrompt,
+          'fixAvailable': f.fixAvailable,
+        }).toList(),
+      };
+
       return CallToolResult(
         content: [
-          Content.text(text: jsonEncode(diffs.map((d) => d.toJson()).toList())),
+          Content.text(text: jsonEncode(result)),
         ],
       );
     } catch (e) {

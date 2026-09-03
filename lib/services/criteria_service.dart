@@ -88,8 +88,17 @@ class CriteriaService {
     final sheetSeverity = (row['Severity'] ?? f.severity).toString().toUpperCase();
     final sheetConfidence = (row['Confidence'] ?? f.confidence).toString().toUpperCase();
     final sheetTitle = row['Rule Name'] ?? f.title;
-    final sheetDesc = row['What to Check / Trigger Condition'] ?? f.description;
-    final sheetRec = row['Recommendation'] ?? f.recommendation;
+    final sheetDesc = (row['What to Check / Trigger Condition'] ?? '').toString().trim();
+    final sheetRec = (row['Recommendation'] ?? '').toString().trim();
+
+    // Preserve contextual description if already specific to a file/evidence
+    String finalDescription = f.description;
+    if (finalDescription.isEmpty && sheetDesc.isNotEmpty) {
+      finalDescription = sheetDesc;
+    }
+
+    // Use sheet recommendation if available, otherwise preserve finding recommendation
+    String finalRecommendation = sheetRec.isNotEmpty ? sheetRec : f.recommendation;
 
     return Finding(
       id: f.id,
@@ -100,9 +109,11 @@ class CriteriaService {
       file: f.file,
       line: f.line,
       evidence: f.evidence,
-      description: sheetDesc.isNotEmpty ? sheetDesc : f.description,
+      description: finalDescription,
       risk: f.risk,
-      recommendation: sheetRec.isNotEmpty ? sheetRec : f.recommendation,
+      recommendation: finalRecommendation,
+      suggestedFix: f.suggestedFix,
+      claudePrompt: f.claudePrompt,
       fixAvailable: f.fixAvailable,
     );
   }

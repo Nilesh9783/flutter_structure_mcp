@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:flutter_architect_mcp/core/models/finding.dart';
+import 'package:flutter_architect_mcp/utils/solution_generator.dart';
 
 class FirebaseScanner {
   Future<List<Finding>> scan(Directory projectDir, {bool hasFirebase = false}) async {
@@ -27,7 +28,7 @@ class FirebaseScanner {
 
     if (ruleFiles.isEmpty) {
       if (hasFirebase) {
-        findings.add(Finding(
+        final finding = Finding(
           id: 'SEC-FB-001',
           category: 'SECURITY',
           severity: 'MEDIUM',
@@ -35,12 +36,13 @@ class FirebaseScanner {
           title: 'Firebase Security Rules Verification Unavailable',
           file: 'pubspec.yaml',
           line: 1,
-          evidence: 'Firebase dependencies declared',
-          description: 'Firebase rules could not be verified because security rules were not found locally.',
+          evidence: 'Firebase dependencies declared without local security rules',
+          description: 'Firebase rules could not be verified because security rules (e.g. firestore.rules) were not found locally.',
           risk: 'Without locally declared security rules, we cannot verify if the remote database is protected against unauthorized read/write requests.',
           recommendation: 'Ensure your Firestore, Storage, or Realtime Database rules are checked into the repository (e.g., firestore.rules) so they can be statically analyzed and deployed.',
           fixAvailable: false,
-        ));
+        );
+        findings.add(SolutionGenerator.attachSolutionAndPrompt(finding));
       }
       return findings;
     }
@@ -52,22 +54,27 @@ class FirebaseScanner {
       final relativePath = p.relative(file.path, from: projectDir.path);
       try {
         final content = await file.readAsString();
-        final matches = openRulesPattern.allMatches(content);
-        if (matches.isNotEmpty) {
-          findings.add(Finding(
-            id: 'SEC-FB-002',
-            category: 'SECURITY',
-            severity: 'CRITICAL',
-            confidence: 'HIGH',
-            title: 'Permissive Wildcard Firebase Rule Detected',
-            file: relativePath,
-            line: 1,
-            evidence: 'allow read, write: if true;',
-            description: 'The security rules file "$relativePath" contains permissive allow rules without authentication checks.',
-            risk: 'Any remote client can query, edit, or delete database and storage assets without authentication or validation, leading to potential data loss or leaks.',
-            recommendation: 'Update rules to require authentication, e.g., "if request.auth != null;", and define fine-grained object ownership validations.',
-            fixAvailable: false,
-          ));
+        final lines = content.split('\n');
+
+        for (int i = 0; i < lines.length; i++) {
+          final line = lines[i];
+          if (openRulesPattern.hasMatch(line) && !line.trim().startsWith('//')) {
+            final finding = Finding(
+              id: 'SEC-FB-002',
+              category: 'SECURITY',
+              severity: 'CRITICAL',
+              confidence: 'HIGH',
+              title: 'Permissive Wildcard Firebase Rule Detected',
+              file: relativePath,
+              line: i + 1,
+              evidence: line.trim(),
+              description: 'The security rules file "$relativePath" contains permissive allow rules without authentication checks at line ${i + 1}.',
+              risk: 'Any remote client can query, edit, or delete database and storage assets without authentication or validation, leading to potential data loss or leaks.',
+              recommendation: 'Update rules to require authentication, e.g., "if request.auth != null;", and define fine-grained object ownership validations.',
+              fixAvailable: false,
+            );
+            findings.add(SolutionGenerator.attachSolutionAndPrompt(finding));
+          }
         }
       } catch (_) {}
     }

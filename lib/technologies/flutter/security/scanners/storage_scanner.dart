@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:flutter_architect_mcp/core/models/finding.dart';
 import 'package:flutter_architect_mcp/core/filesystem/file_cache.dart';
+import 'package:flutter_architect_mcp/utils/solution_generator.dart';
 
 class StorageScanner {
   // Pattern to find SharedPreferences, Hive or Sqflite storage write/reads
@@ -48,12 +49,10 @@ class StorageScanner {
           final match = _storageWritePattern.firstMatch(lineContent);
           if (match != null) {
             final keyUsed = match.group(1)?.toLowerCase() ?? '';
-            // If the key contains onboarding, theme, count, etc. ignore it.
-            // But if it contains sensitive keyword:
             final isSensitive = _sensitiveKeys.any((k) => keyUsed.contains(k));
             
             if (isSensitive) {
-              findings.add(Finding(
+              final finding = Finding(
                 id: 'SEC-STR-001',
                 category: 'SECURITY',
                 severity: 'HIGH',
@@ -62,11 +61,12 @@ class StorageScanner {
                 file: relativePath,
                 line: i + 1,
                 evidence: lineContent.trim(),
-                description: 'Detected a storage write operation storing key "$keyUsed" in unencrypted storage (SharedPreferences, Hive, or local DB).',
+                description: 'Detected a storage write operation storing key "$keyUsed" in unencrypted storage (SharedPreferences, Hive, or local DB) at line ${i + 1}.',
                 risk: 'Storing authentication tokens, credentials, or session keys in plain text allows malware or physical attackers with access to the device file system to compromise the user accounts.',
                 recommendation: 'Use flutter_secure_storage for sensitive keys. If using Hive, open the box with an encryption key retrieved from secure storage.',
                 fixAvailable: false,
-              ));
+              );
+              findings.add(SolutionGenerator.attachSolutionAndPrompt(finding));
             }
           }
         }

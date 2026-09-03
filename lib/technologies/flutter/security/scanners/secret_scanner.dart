@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:flutter_architect_mcp/core/models/finding.dart';
 import 'package:flutter_architect_mcp/core/filesystem/file_cache.dart';
+import 'package:flutter_architect_mcp/utils/solution_generator.dart';
 
 class SecretScanner {
   final List<RegExp> _patterns = [
@@ -73,8 +74,9 @@ class SecretScanner {
             for (final match in matches) {
               final rawSecret = match.group(0) ?? '';
               final masked = _maskSecret(rawSecret);
+              final lineEvidence = lineContent.replaceAll(rawSecret, masked).trim();
 
-              fileFindings.add(Finding(
+              final finding = Finding(
                 id: 'SEC-SEC-001',
                 category: 'SECURITY',
                 severity: 'HIGH',
@@ -82,12 +84,14 @@ class SecretScanner {
                 title: 'Potential Hardcoded Secret / API Key Detected',
                 file: relativePath,
                 line: i + 1,
-                evidence: masked,
-                description: 'A line matching typical credential/secret patterns was found in $relativePath.',
+                evidence: lineEvidence.isNotEmpty ? lineEvidence : masked,
+                description: 'Hardcoded credential or API secret pattern detected in $relativePath at line ${i + 1}.',
                 risk: 'Storing credentials in clear text within code or resource files can result in security breaches if the code is decompiled or leaked.',
-                recommendation: 'Use secure environment variables or a secure key store (such as flutter_secure_storage) to retrieve configurations dynamically. Remove hardcoded values from source control.',
+                recommendation: 'Extract secrets to secure environment variables (.env via flutter_dotenv) or a secure key store (flutter_secure_storage). Remove hardcoded values from source code.',
                 fixAvailable: false,
-              ));
+              );
+
+              fileFindings.add(SolutionGenerator.attachSolutionAndPrompt(finding));
             }
           }
         }

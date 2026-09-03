@@ -4,6 +4,7 @@ import 'package:path/path.dart' as p;
 import 'package:flutter_architect_mcp/core/models/finding.dart';
 import 'package:flutter_architect_mcp/technologies/base_analyzer.dart';
 import 'package:flutter_architect_mcp/technologies/flutter/analyzer/project_detector.dart';
+import 'package:flutter_architect_mcp/utils/solution_generator.dart';
 
 class VueAnalyzer implements BaseAnalyzer {
   @override
@@ -48,7 +49,7 @@ class VueAnalyzer implements BaseAnalyzer {
     if (!dir.existsSync()) return findings;
 
     await _scanDirectory(dir, projectPath, findings);
-    return findings;
+    return findings.map((f) => SolutionGenerator.attachSolutionAndPrompt(f)).toList();
   }
 
   Future<void> _scanDirectory(Directory dir, String rootPath, List<Finding> findings) async {

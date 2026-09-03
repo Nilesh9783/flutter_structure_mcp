@@ -2,17 +2,12 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:flutter_architect_mcp/core/models/finding.dart';
 import 'package:flutter_architect_mcp/core/filesystem/file_cache.dart';
+import 'package:flutter_architect_mcp/utils/solution_generator.dart';
 
 class AuthScanner {
   // Pattern to find hardcoded passwords or keys
   static final RegExp _passwordFieldPattern = RegExp(
     r"""(?:String|var|final)\s+[a-zA-Z0-9_]*(?:password|passwd|pwd|secret|token|key)[a-zA-Z0-9_]*\s*=\s*["']([^"']{4,})["']""",
-    caseSensitive: false,
-  );
-
-  // Pattern to check if logout doesn't delete/clear tokens
-  static final RegExp _logoutFunctionPattern = RegExp(
-    r'void\s+logout\(\)[^\{]*\{([^\}]*)\}',
     caseSensitive: false,
   );
 
@@ -46,6 +41,8 @@ class AuthScanner {
         // Check for hardcoded password field assignments
         for (int i = 0; i < lines.length; i++) {
           final lineContent = lines[i];
+          if (lineContent.trim().startsWith('//')) continue;
+
           final match = _passwordFieldPattern.firstMatch(lineContent);
           if (match != null) {
             final val = match.group(1) ?? '';
@@ -55,48 +52,75 @@ class AuthScanner {
             final varName = varMatch?.group(1) ?? '';
 
             if (!_isLikelyFalsePositive(varName, val)) {
-              findings.add(Finding(
+              final finding = Finding(
                 id: 'SEC-ATH-001',
                 category: 'SECURITY',
                 severity: 'HIGH',
-                confidence: 'MEDIUM', // Potential
+                confidence: 'MEDIUM',
                 title: 'Potential Hardcoded Password or Auth Key',
                 file: relativePath,
                 line: i + 1,
                 evidence: lineContent.trim(),
-                description: 'Found variable assignment indicating a hardcoded password or token: "${match.group(0)}"',
+                description: 'Found variable assignment indicating a hardcoded password or auth credential at line ${i + 1} in $relativePath.',
                 risk: 'Hardcoding passwords in code makes them accessible to any attacker who extracts the application binary.',
                 recommendation: 'Retrieve passwords dynamically from user input or encrypted vaults.',
                 fixAvailable: false,
-              ));
+              );
+              findings.add(SolutionGenerator.attachSolutionAndPrompt(finding));
             }
           }
         }
 
-        // Check for logout implementation completeness
-        final logoutMatches = _logoutFunctionPattern.allMatches(content);
-        for (final match in logoutMatches) {
-          final body = match.group(1) ?? '';
-          if (body.trim().isEmpty || (!body.contains('clear') && !body.contains('delete') && !body.contains('remove'))) {
-            findings.add(Finding(
-              id: 'SEC-ATH-002',
-              category: 'SECURITY',
-              severity: 'MEDIUM',
-              confidence: 'LOW', // Informational / Potential
-              title: 'Incomplete Logout Implementation',
-              file: relativePath,
-              line: 1,
-              evidence: 'void logout() { ... }',
-              description: 'The logout function in $relativePath does not appear to clear local authentication tokens or cache.',
-              risk: 'If local storage is not wiped during logout, another user or an attacker could potentially access the preceding session.',
-              recommendation: 'Ensure SharedPreferences, Hive boxes, and local caches are cleared or deleted when the user logs out.',
-              fixAvailable: false,
-            ));
+        // Check for logout implementation completeness with exact line
+        for (int i = 0; i < lines.length; i++) {
+          final line = lines[i];
+          if ((line.contains('void logout(') || line.contains('Future<void> logout(')) && !line.trim().startsWith('//')) {
+            // Find logout block
+            final blockContent = _extractFunctionBlock(lines, i);
+            if (blockContent.isNotEmpty && !blockContent.contains('clear') && !blockContent.contains('delete') && !blockContent.contains('remove')) {
+              final finding = Finding(
+                id: 'SEC-ATH-002',
+                category: 'SECURITY',
+                severity: 'MEDIUM',
+                confidence: 'LOW',
+                title: 'Incomplete Logout Implementation',
+                file: relativePath,
+                line: i + 1,
+                evidence: line.trim(),
+                description: 'The logout function at line ${i + 1} in $relativePath does not appear to clear local authentication tokens or cache.',
+                risk: 'If local storage is not wiped during logout, another user or an attacker could potentially access the preceding session.',
+                recommendation: 'Ensure SharedPreferences, FlutterSecureStorage, Hive boxes, and local caches are cleared or deleted when the user logs out.',
+                fixAvailable: false,
+              );
+              findings.add(SolutionGenerator.attachSolutionAndPrompt(finding));
+            }
           }
         }
       } catch (_) {}
     }
     return findings;
+  }
+
+  String _extractFunctionBlock(List<String> lines, int startLine) {
+    final buffer = StringBuffer();
+    int braceCount = 0;
+    bool foundOpen = false;
+
+    for (int i = startLine; i < lines.length && i < startLine + 40; i++) {
+      final line = lines[i];
+      buffer.writeln(line);
+      if (line.contains('{')) {
+        foundOpen = true;
+        braceCount += line.split('{').length - 1;
+      }
+      if (line.contains('}')) {
+        braceCount -= line.split('}').length - 1;
+      }
+      if (foundOpen && braceCount <= 0) {
+        break;
+      }
+    }
+    return buffer.toString();
   }
 
   bool _isLikelyFalsePositive(String varName, String value) {

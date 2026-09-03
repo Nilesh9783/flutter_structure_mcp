@@ -1,0 +1,49 @@
+{
+  "projectPath": ".",
+  "metadata": {
+    "projectName": "TestApp",
+    "flutterVersion": "3.24.0",
+    "dartVersion": "3.5.0",
+    "dependencies": {},
+    "devDependencies": {},
+    "detectedArchitecture": "Clean",
+    "detectedStateManagement": "Bloc",
+    "detectedRouter": "GoRouter",
+    "detectedNetwork": "Dio",
+    "detectedDatabase": "Hive",
+    "hasFirebase": false,
+    "hasAuthentication": true,
+    "targetPlatforms": [
+      "android",
+      "ios"
+    ]
+  },
+  "score": 75,
+  "scoreDetails": {
+    "rawScore": 75,
+    "criticalCount": 1,
+    "highCount": 0,
+    "mediumCount": 0,
+    "lowCount": 0,
+    "explanation": "Calculated from security/dependency findings:\n- Initial Base Score: 100\n- Critical Findings: 1 (Penalty: -25 points each => -25)\n- High Findings: 0 (Penalty: -15 points each => 0)\n- Medium Findings: 0 (Penalty: -7 points each => 0)\n- Low Findings: 0 (Penalty: -2 points each => 0)\n- Total Deductions: 25\n- Final Score: 75"
+  },
+  "masterClaudePrompt": "# 🛠️ Master Fix Command for Claude\n\nPlease review and resolve the following 1 audit finding(s) in the project.\nCRITICAL: Preserve all existing functionality, imports, styles, and public APIs while applying these fixes.\n\n## 📁 File: `lib/core/auth.dart` (1 issue)\n\n### 1. [SECURITY - CRITICAL] Hardcoded Secret Exposure (authKey) (Line 5)\n- **Evidence:** `const authKey = \"my_private_auth_token_9999\";`\n- **Fix Instruction:**\n```\n// In lib/core/auth.dart (Line 5):\n// Step 1: Remove hardcoded credential and store it in environment config or secure storage.\n// Step 2: Use flutter_dotenv or flutter_secure_storage:\n\n// Option A: Using flutter_dotenv (.env file):\n// Add key to .env: API_SECRET_KEY=your_value_here\nimport 'package:flutter_dotenv/flutter_dotenv.dart';\nfinal apiKey = dotenv.env['API_SECRET_KEY'] ?? '';\n\n// Option B: Using flutter_secure_storage (for runtime sensitive tokens):\nimport 'package:flutter_secure_storage/flutter_secure_storage.dart';\nfinal storage = const FlutterSecureStorage();\nfinal apiKey = await storage.read(key: 'api_secret_key');\n```\n---\n\n### Fix Rules & Constraints:\n1. DO NOT break existing functionality, imports, styles, or public APIs.\n2. If packages are required (e.g. `flutter_secure_storage` or `flutter_dotenv`), add them to `pubspec.yaml` / `package.json` appropriately.\n3. Ensure no regressions or compilation errors are introduced.",
+  "findings": [
+    {
+      "id": "SEC-001",
+      "category": "SECURITY",
+      "severity": "CRITICAL",
+      "confidence": "HIGH",
+      "title": "Hardcoded Secret Exposure (authKey)",
+      "file": "lib/core/auth.dart",
+      "line": 5,
+      "evidence": "const authKey = \"my_private_auth_token_9999\";",
+      "description": "Hardcoded secret at line 5.",
+      "risk": "Token exposure",
+      "recommendation": "Migrate to .env",
+      "suggestedFix": "// In lib/core/auth.dart (Line 5):\n// Step 1: Remove hardcoded credential and store it in environment config or secure storage.\n// Step 2: Use flutter_dotenv or flutter_secure_storage:\n\n// Option A: Using flutter_dotenv (.env file):\n// Add key to .env: API_SECRET_KEY=your_value_here\nimport 'package:flutter_dotenv/flutter_dotenv.dart';\nfinal apiKey = dotenv.env['API_SECRET_KEY'] ?? '';\n\n// Option B: Using flutter_secure_storage (for runtime sensitive tokens):\nimport 'package:flutter_secure_storage/flutter_secure_storage.dart';\nfinal storage = const FlutterSecureStorage();\nfinal apiKey = await storage.read(key: 'api_secret_key');",
+      "claudePrompt": "Please fix the following issue in my project without breaking existing functionality:\n\n- **File:** `lib/core/auth.dart` (Line 5)\n- **Category:** SECURITY | **Severity:** CRITICAL\n- **Issue:** Hardcoded Secret Exposure (authKey)\n- **Evidence:** `const authKey = \"my_private_auth_token_9999\";`\n\n### Required Solution:\n// In lib/core/auth.dart (Line 5):\n// Step 1: Remove hardcoded credential and store it in environment config or secure storage.\n// Step 2: Use flutter_dotenv or flutter_secure_storage:\n\n// Option A: Using flutter_dotenv (.env file):\n// Add key to .env: API_SECRET_KEY=your_value_here\nimport 'package:flutter_dotenv/flutter_dotenv.dart';\nfinal apiKey = dotenv.env['API_SECRET_KEY'] ?? '';\n\n// Option B: Using flutter_secure_storage (for runtime sensitive tokens):\nimport 'package:flutter_secure_storage/flutter_secure_storage.dart';\nfinal storage = const FlutterSecureStorage();\nfinal apiKey = await storage.read(key: 'api_secret_key');\n\nPlease inspect `lib/core/auth.dart`, apply the necessary changes preserving all existing behavior and APIs, and ensure the code compiles cleanly.",
+      "fixAvailable": false
+    }
+  ]
+}

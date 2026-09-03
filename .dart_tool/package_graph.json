@@ -5,7 +5,7 @@
   "packages": [
     {
       "name": "flutter_architect_mcp",
-      "version": "1.0.2",
+      "version": "1.0.3",
       "dependencies": [
         "dart_mcp",
         "mailer",

@@ -3,6 +3,7 @@ import 'package:path/path.dart' as p;
 import 'package:flutter_architect_mcp/core/models/finding.dart';
 import 'package:flutter_architect_mcp/core/filesystem/file_cache.dart';
 import 'package:flutter_architect_mcp/services/criteria_service.dart';
+import 'package:flutter_architect_mcp/utils/solution_generator.dart';
 
 class CodeQualityScanner {
   // Pattern to detect TODO/FIXME comments
@@ -14,6 +15,11 @@ class CodeQualityScanner {
   // Pattern to find database queries or network requests in UI files
   static final RegExp _dbInUiPattern = RegExp(
     r'(?:db|database|isar|hive|drift)\.(?:rawQuery|query|insert|update|delete|put|get)\b',
+    caseSensitive: false,
+  );
+
+  static final RegExp _netInUiPattern = RegExp(
+    r'(?:dio\.(?:get|post|put|delete)|http\.(?:get|post|put|delete))\s*\(',
     caseSensitive: false,
   );
 
@@ -51,7 +57,7 @@ class CodeQualityScanner {
 
         // 1. Check file size (long files)
         if (lines.length > maxLoc) {
-          findings.add(Finding(
+          final finding = Finding(
             id: 'QAL-001',
             category: 'CODE_QUALITY',
             severity: 'LOW',
@@ -59,12 +65,13 @@ class CodeQualityScanner {
             title: 'Excessively Long File (Class Size)',
             file: relativePath,
             line: 1,
-            evidence: 'Lines count: ${lines.length}',
-            description: 'The file $relativePath is longer than $maxLoc lines.',
+            evidence: 'Lines count: ${lines.length} (Max threshold: $maxLoc)',
+            description: 'The file $relativePath is longer than $maxLoc lines (${lines.length} lines detected).',
             risk: 'Large files indicate bloated classes that violate the Single Responsibility Principle, making maintaining, testing, and understanding the code difficult.',
             recommendation: 'Break down the class or widgets into smaller, modular helper components or service classes.',
             fixAvailable: false,
-          ));
+          );
+          findings.add(SolutionGenerator.attachSolutionAndPrompt(finding));
         }
 
         // 2. Check for TODO / FIXME comments
@@ -74,7 +81,7 @@ class CodeQualityScanner {
             final match = _todoPattern.firstMatch(lineContent);
             if (match != null) {
               final todoText = match.group(1)?.trim() ?? '';
-              findings.add(Finding(
+              final finding = Finding(
                 id: 'QAL-002',
                 category: 'CODE_QUALITY',
                 severity: 'LOW',
@@ -83,11 +90,12 @@ class CodeQualityScanner {
                 file: relativePath,
                 line: i + 1,
                 evidence: lineContent.trim(),
-                description: 'Found a developer note: "$todoText"',
+                description: 'Found unresolved developer note in $relativePath at line ${i + 1}: "$todoText"',
                 risk: 'Unresolved TODOs represent technical debt, legacy code shortcuts, or features left incomplete before push to production.',
                 recommendation: 'Address the TODO item or track it in your team\'s issue management system.',
                 fixAvailable: false,
-              ));
+              );
+              findings.add(SolutionGenerator.attachSolutionAndPrompt(finding));
             }
           }
         }
@@ -101,52 +109,52 @@ class CodeQualityScanner {
             relativePath.endsWith('_widget.dart');
 
         if (isUiFile) {
-          // Check for DB references
-          if (_dbInUiPattern.hasMatch(content)) {
-            findings.add(Finding(
-              id: 'QAL-ARC-001',
-              category: 'CODE_QUALITY',
-              severity: 'HIGH',
-              confidence: 'HIGH',
-              title: 'Database Access Performed Inside UI Layer',
-              file: relativePath,
-              line: _findLine(lines, '.'),
-              evidence: 'Direct DB command within UI widget',
-              description: 'The UI file $relativePath executes direct query, write or access commands on a database.',
-              risk: 'Direct database execution from widgets violates architectural segregation, resulting in high coupling and rendering UI testing impossible.',
-              recommendation: 'Delegate database actions to a Repository or Data Source provider class.',
-              fixAvailable: false,
-            ));
-          }
+          for (int i = 0; i < lines.length; i++) {
+            final line = lines[i];
+            if (line.trim().startsWith('//')) continue;
 
-          // Check for direct raw HTTP/Dio references in UI
-          if (content.contains('dio.get(') || content.contains('http.get(') || content.contains('dio.post(')) {
-            findings.add(Finding(
-              id: 'QAL-ARC-002',
-              category: 'CODE_QUALITY',
-              severity: 'HIGH',
-              confidence: 'HIGH',
-              title: 'Direct Network Call Performed Inside UI Layer',
-              file: relativePath,
-              line: _findLine(lines, 'get('),
-              evidence: 'Direct http/dio call within UI widget',
-              description: 'The UI file $relativePath executes direct http or dio request calls.',
-              risk: 'Performing raw network interactions inside UI screens violates architecture boundaries and makes caching/offline syncing complex.',
-              recommendation: 'Perform network queries in an API client and fetch results using view models, blocs, or services.',
-              fixAvailable: false,
-            ));
+            // Check for DB references in UI
+            if (_dbInUiPattern.hasMatch(line)) {
+              final finding = Finding(
+                id: 'QAL-ARC-001',
+                category: 'CODE_QUALITY',
+                severity: 'HIGH',
+                confidence: 'HIGH',
+                title: 'Database Access Performed Inside UI Layer',
+                file: relativePath,
+                line: i + 1,
+                evidence: line.trim(),
+                description: 'The UI file $relativePath executes direct database commands at line ${i + 1}.',
+                risk: 'Direct database execution from widgets violates architectural segregation, resulting in high coupling and rendering UI testing impossible.',
+                recommendation: 'Delegate database actions to a Repository or Data Source provider class.',
+                fixAvailable: false,
+              );
+              findings.add(SolutionGenerator.attachSolutionAndPrompt(finding));
+            }
+
+            // Check for direct network calls in UI
+            if (_netInUiPattern.hasMatch(line)) {
+              final finding = Finding(
+                id: 'QAL-ARC-002',
+                category: 'CODE_QUALITY',
+                severity: 'HIGH',
+                confidence: 'HIGH',
+                title: 'Direct Network Call Performed Inside UI Layer',
+                file: relativePath,
+                line: i + 1,
+                evidence: line.trim(),
+                description: 'The UI file $relativePath executes direct network request calls at line ${i + 1}.',
+                risk: 'Performing raw network interactions inside UI screens violates architecture boundaries and makes caching/offline syncing complex.',
+                recommendation: 'Perform network queries in an API client and fetch results using view models, blocs, or services.',
+                fixAvailable: false,
+              );
+              findings.add(SolutionGenerator.attachSolutionAndPrompt(finding));
+            }
           }
         }
       } catch (_) {}
     }
 
     return findings;
-  }
-
-  int _findLine(List<String> lines, String keyword) {
-    for (int i = 0; i < lines.length; i++) {
-      if (lines[i].contains(keyword)) return i + 1;
-    }
-    return 1;
   }
 }
