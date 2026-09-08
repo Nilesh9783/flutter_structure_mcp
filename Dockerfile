@@ -1,11 +1,11 @@
-FROM dart:stable
+FROM dart:stable AS build
 
 WORKDIR /app
-
-COPY . .
-
+COPY . /app
 RUN dart pub get
+RUN dart compile exe bin/server.dart -o bin/server
 
-EXPOSE 8080
-
-CMD ["dart", "run", "bin/server.dart"]
+FROM dart:stable
+WORKDIR /app
+COPY --from=build /app/bin/server /app/bin/server
+ENTRYPOINT ["/app/bin/server"]
