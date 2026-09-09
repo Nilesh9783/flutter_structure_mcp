@@ -1,3 +1,10 @@
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+  Tool as McpTool,
+} from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import * as fs from "fs";
 import * as path from "path";
@@ -752,7 +759,7 @@ export default class NicFlutterStructureArchitect {
   readonly displayName = "NIC Flutter & Multi-Tech Architect";
   readonly display_name = "NIC Flutter & Multi-Tech Architect";
   readonly title = "NIC Flutter & Multi-Tech Architect";
-  readonly version = "1.0.6";
+  readonly version = "1.0.7";
   readonly description = "Multi-technology codebase auditor for Flutter, Vue projects.";
   readonly tools: Tool[] = ALL_TOOLS;
 
@@ -1073,4 +1080,45 @@ export default class NicFlutterStructureArchitect {
     // REQUIRED by MCPHub contract: Must THROW for unknown tool name
     throw new Error(`Unknown tool: ${name}`);
   }
+
+  async startServer(): Promise<Server> {
+    const server = new Server(
+      {
+        name: this.name,
+        version: this.version,
+      },
+      {
+        capabilities: {
+          tools: {},
+        },
+      }
+    );
+
+    server.setRequestHandler(ListToolsRequestSchema, async () => {
+      return { tools: this.tools as McpTool[] };
+    });
+
+    server.setRequestHandler(CallToolRequestSchema, async (request) => {
+      const { name, arguments: args = {} } = request.params;
+      return this.executeTool(name, args);
+    });
+
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    return server;
+  }
 }
+
+// CLI entrypoint when executed directly via node / Claude Desktop:
+const isCLI = process.argv[1] && (
+  process.argv[1].endsWith("index.js") || 
+  process.argv[1].endsWith("index.ts")
+);
+
+if (isCLI) {
+  const plugin = new NicFlutterStructureArchitect();
+  plugin.startServer().catch((err) => {
+    console.error("Failed to start stdio server:", err);
+  });
+}
+

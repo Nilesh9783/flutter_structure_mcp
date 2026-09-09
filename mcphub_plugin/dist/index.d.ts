@@ -1,3 +1,4 @@
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { z } from "zod";
 export interface Tool {
     name: string;
@@ -65,7 +66,7 @@ export default class NicFlutterStructureArchitect {
     readonly displayName = "NIC Flutter & Multi-Tech Architect";
     readonly display_name = "NIC Flutter & Multi-Tech Architect";
     readonly title = "NIC Flutter & Multi-Tech Architect";
-    readonly version = "1.0.6";
+    readonly version = "1.0.7";
     readonly description = "Multi-technology codebase auditor for Flutter, Vue projects.";
     readonly tools: Tool[];
     private config;
@@ -118,4 +119,5 @@ export default class NicFlutterStructureArchitect {
         }>;
         isError?: boolean;
     }>;
+    startServer(): Promise<Server>;
 }

@@ -3,7 +3,7 @@
   "displayName": "NIC Flutter & Multi-Tech Architect",
   "display_name": "NIC Flutter & Multi-Tech Architect",
   "title": "NIC Flutter & Multi-Tech Architect",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Multi-technology codebase auditor for Flutter, Vue projects.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -14,6 +14,7 @@
     "package": "npm run build && zip -r ../flutter_structure_mcp_plugin.zip package.json tsconfig.json src dist && cp ../flutter_structure_mcp_plugin.zip ~/Desktop/flutter_structure_mcp_plugin.zip"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.5.0",
     "zod": "^3.23.8"
   },
   "peerDependencies": {

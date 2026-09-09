@@ -1,3 +1,6 @@
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { CallToolRequestSchema, ListToolsRequestSchema, } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import * as fs from "fs";
 import * as path from "path";
@@ -686,7 +689,7 @@ export default class NicFlutterStructureArchitect {
     displayName = "NIC Flutter & Multi-Tech Architect";
     display_name = "NIC Flutter & Multi-Tech Architect";
     title = "NIC Flutter & Multi-Tech Architect";
-    version = "1.0.6";
+    version = "1.0.7";
     description = "Multi-technology codebase auditor for Flutter, Vue projects.";
     tools = ALL_TOOLS;
     config = {
@@ -969,4 +972,33 @@ export default class NicFlutterStructureArchitect {
         // REQUIRED by MCPHub contract: Must THROW for unknown tool name
         throw new Error(`Unknown tool: ${name}`);
     }
+    async startServer() {
+        const server = new Server({
+            name: this.name,
+            version: this.version,
+        }, {
+            capabilities: {
+                tools: {},
+            },
+        });
+        server.setRequestHandler(ListToolsRequestSchema, async () => {
+            return { tools: this.tools };
+        });
+        server.setRequestHandler(CallToolRequestSchema, async (request) => {
+            const { name, arguments: args = {} } = request.params;
+            return this.executeTool(name, args);
+        });
+        const transport = new StdioServerTransport();
+        await server.connect(transport);
+        return server;
+    }
+}
+// CLI entrypoint when executed directly via node / Claude Desktop:
+const isCLI = process.argv[1] && (process.argv[1].endsWith("index.js") ||
+    process.argv[1].endsWith("index.ts"));
+if (isCLI) {
+    const plugin = new NicFlutterStructureArchitect();
+    plugin.startServer().catch((err) => {
+        console.error("Failed to start stdio server:", err);
+    });
 }
