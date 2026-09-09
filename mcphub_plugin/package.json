@@ -10,7 +10,8 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "package": "npm run build && zip -r ../flutter_structure_mcp_plugin.zip package.json tsconfig.json src dist && cp ../flutter_structure_mcp_plugin.zip ~/Desktop/flutter_structure_mcp_plugin.zip"
   },
   "dependencies": {
     "zod": "^3.23.8"
