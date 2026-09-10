@@ -11,32 +11,63 @@ export interface Tool {
 }
 export interface Finding {
     id: string;
-    category: "SECURITY" | "MEMORY" | "PERFORMANCE" | "CODE_QUALITY" | "ARCHITECTURE";
+    category: "SECURITY" | "MEMORY" | "PERFORMANCE" | "CODE_QUALITY" | "ARCHITECTURE" | "DEPENDENCY";
     severity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "INFO";
     confidence: "HIGH" | "MEDIUM" | "LOW";
     title: string;
     file: string;
     line: number;
-    evidence?: string;
+    evidence: string;
     description: string;
     risk: string;
     recommendation: string;
     fixAvailable: boolean;
-    proposedFix?: string;
+    suggestedFix?: string;
+    claudePrompt?: string;
 }
-export interface SecurityScore {
+export interface SecurityScoreDetails {
+    rawScore: number;
     finalScore: number;
+    criticalCount: number;
+    highCount: number;
+    mediumCount: number;
+    lowCount: number;
     riskLevel: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "EXCELLENT";
     explanation: string;
 }
 export interface ProjectMetadata {
     projectName: string;
     technology: string;
+    technologyId: string;
+    flutterVersion: string;
+    dartVersion: string;
     detectedArchitecture: string;
-    detectedStateManagement?: string;
+    detectedStateManagement: string;
+    detectedDatabase: string;
+    detectedRouter: string;
+    detectedNetwork: string;
+    targetPlatforms: string[];
     hasFirebase: boolean;
     hasSupabase: boolean;
     packageCount: number;
+}
+export declare class PathUtils {
+    static resolveSafePath(rawPath?: string): string;
+}
+export declare const AUDIT_CRITERIA: Array<{
+    id: string;
+    category: string;
+    name: string;
+    check: string;
+    type: string;
+    threshold: string;
+    severity: string;
+}>;
+export declare class SolutionGenerator {
+    static attachSolutionAndPrompt(finding: Finding): Finding;
+    static generateSuggestedFix(finding: Finding): string;
+    static generateClaudePrompt(finding: Finding, suggestedFix?: string): string;
+    static generateMasterClaudePrompt(findings: Finding[]): string;
 }
 export declare class SecretScanner {
     private static patterns;
@@ -60,14 +91,26 @@ export declare class CodeQualityScanner {
 export declare class ProjectDetector {
     static detect(projectPath: string): ProjectMetadata;
 }
+export declare function calculateScore(findings: Finding[]): SecurityScoreDetails;
+export declare class FullReportGenerator {
+    static generateAllReports(projectPath: string, meta: ProjectMetadata, findings: Finding[], score: SecurityScoreDetails): Promise<{
+        html: string;
+        pdfHtml: string;
+        json: string;
+        markdown: string;
+    }>;
+    static generateMarkdown(meta: ProjectMetadata, findings: Finding[], score: SecurityScoreDetails): string;
+    static generateInteractiveHtml(meta: ProjectMetadata, findings: Finding[], score: SecurityScoreDetails): string;
+    static generatePdfHtml(meta: ProjectMetadata, findings: Finding[], score: SecurityScoreDetails): string;
+}
 export declare const ALL_TOOLS: Tool[];
 export default class NicFlutterStructureArchitect {
     readonly name = "nic-flutter-structure-architect";
     readonly displayName = "NIC Flutter & Multi-Tech Architect";
     readonly display_name = "NIC Flutter & Multi-Tech Architect";
     readonly title = "NIC Flutter & Multi-Tech Architect";
-    readonly version = "1.0.7";
-    readonly description = "Multi-technology codebase auditor for Flutter, Vue projects.";
+    readonly version = "1.0.8";
+    readonly description = "Multi-technology codebase auditor for Flutter, Vue projects with interactive tabbed HTML reports.";
     readonly tools: Tool[];
     private config;
     private sensitiveConfig;
